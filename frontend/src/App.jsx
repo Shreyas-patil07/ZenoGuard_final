@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import logoNoBg from './assets/logo_no_bg.png';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -53,7 +54,7 @@ function Protected({ children }) {
 }
 
 function Brand() {
-  return <Link className="brand" to="/"><span className="brand-mark"><ShieldCheck size={24}/></span><span>Zeno<span>Guard</span></span></Link>;
+  return <Link className="brand" to="/"><img src={logoNoBg} alt="ZenoGuard" className="brand-logo" /></Link>;
 }
 
 function Topbar() {

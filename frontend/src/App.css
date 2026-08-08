@@ -1,1 +1,8 @@
 /* ZenoGuard application styles live in index.css. Kept as a stable import for the existing Vite entrypoint. */
+
+.brand-logo {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
