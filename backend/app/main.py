@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from .routers import auth, kyc, wallet, company, earnings, premium, claims, contract, ml, upload
+from .health import health
 
 Base.metadata.create_all(bind=engine)
 
@@ -30,6 +31,8 @@ app.include_router(claims.router)
 app.include_router(contract.router)
 app.include_router(ml.router)
 app.include_router(upload.router)
+app.include_router(health.router)
+
 
 @app.get("/")
 def read_root():
