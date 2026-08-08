@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 import datetime
 from .database import Base
 
+
 class Rider(Base):
     __tablename__ = "riders"
 
@@ -51,6 +52,11 @@ class Policy(Base):
     duration_days = Column(Integer, default=30)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
+
+    blockchain_policy_id = Column(Integer, nullable=True, index=True)
+    purchase_tx_hash = Column(String, nullable=True, unique=True)
+    blockchain_status = Column(String, default="NOT_LINKED")
+
     rider = relationship("Rider", back_populates="policies")
     claims = relationship("Claim", back_populates="policy")
 
@@ -89,6 +95,12 @@ class Claim(Base):
     location = Column(String)
     verification_status = Column(String, default="pending")
     screenshot_url = Column(String)
+
+    blockchain_claim_id = Column(Integer, nullable=True, index=True)
+    submit_tx_hash = Column(String, nullable=True, unique=True)
+    payout_tx_hash = Column(String, nullable=True)
+    blockchain_status = Column(String, default="NOT_LINKED")
+
     policy = relationship("Policy", back_populates="claims")
     payout = relationship("Payout", back_populates="claim", uselist=False)
 
