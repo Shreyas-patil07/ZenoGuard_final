@@ -101,13 +101,7 @@ def status() -> dict[str, Any]:
     configured = {key: bool(value) for key, value in ADDRESSES.items()}
     w3 = _w3()
     connected = w3.is_connected()
-    result: dict[str, Any] = {
-        "configured": configured,
-        "rpc_connected": connected,
-        "rpc_url": RPC_URL,
-        "chain_id": CHAIN_ID,
-        "backend_signer_configured": bool(INSURANCE_COMPANY_PRIVATE_KEY),
-    }
+    result: dict[str, Any] = {"configured": configured, "rpc_connected": connected, "rpc_url": RPC_URL, "chain_id": CHAIN_ID, "backend_signer_configured": bool(INSURANCE_COMPANY_PRIVATE_KEY)}
     if connected:
         result["network_chain_id"] = w3.eth.chain_id
         if INSURANCE_COMPANY_PRIVATE_KEY:
@@ -150,10 +144,6 @@ def purchase_policy_for(rider_id: int, wallet_address: str | None, premium_inr: 
     driver = driver_identity(rider_id, wallet_address)
     premium_wei = inr_to_wei(premium_inr)
     coverage_wei = inr_to_wei(coverage_inr)
-    registry = _contract(w3, "driver_registry", DRIVER_REGISTRY_ABI)
-    if not registry.functions.isRegistered(driver).call():
-        register_tx = registry.functions.registerDriverFor(driver, Web3.keccak(text=f"zenoguard:rider:{rider_id}")).build_transaction({"from": signer.address, "chainId": w3.eth.chain_id, "nonce": w3.eth.get_transaction_count(signer.address, "pending")})
-        _send_signed(w3, register_tx)
 
     contract = _contract(w3, "insurance_policy", INSURANCE_POLICY_ABI)
     tx = contract.functions.purchasePolicyFor(driver, premium_wei, coverage_wei, duration_days * 24 * 60 * 60).build_transaction({"from": signer.address, "value": premium_wei, "chainId": w3.eth.chain_id, "nonce": w3.eth.get_transaction_count(signer.address, "pending")})
