@@ -110,7 +110,7 @@ def activate_policy(payload: PremiumRequest, db: Session = Depends(get_db), curr
 
     pending = get_pending_policy(db, current_user.id)
     if pending:
-        return {"message": "A blockchain policy purchase is already pending.", "policy": _policy_dict(pending)}
+        return {"message": "A premium payment is already pending.", "policy": _policy_dict(pending), "next_step": f"POST /payments/premium/order with policy_id={pending.id}"}
 
     tier = (payload.tier or "standard").lower()
     duration = payload.duration_days or 30
@@ -137,7 +137,7 @@ def activate_policy(payload: PremiumRequest, db: Session = Depends(get_db), curr
     db.refresh(policy)
 
     return {
-        "message": "Policy created. Blockchain purchase confirmation is required before coverage becomes active.",
+        "message": "Policy created. Razorpay premium payment is required before coverage becomes active.",
         "policy": _policy_dict(policy),
-        "next_step": "Prepare and sign the InsurancePolicy.purchasePolicy transaction, then call /contract/policy/sync.",
+        "next_step": f"POST /payments/premium/order with policy_id={policy.id}",
     }
