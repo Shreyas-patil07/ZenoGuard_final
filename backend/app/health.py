@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from fastapi import APIRouter
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,12 +7,18 @@ from sqlalchemy.exc import SQLAlchemyError
 from .database import SessionLocal
 
 router = APIRouter(tags=["health"])
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _model_exists(env_name: str, default_relative_path: str) -> bool:
+    configured = os.getenv(env_name)
+    path = Path(configured) if configured else PROJECT_ROOT / default_relative_path
+    return path.exists()
 
 
 @router.get("/health")
 def health_check():
     checks = {"api": "ok", "database": "error", "ml": "error", "blockchain": "not_configured"}
-
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
@@ -21,9 +28,7 @@ def health_check():
     finally:
         db.close()
 
-    premium_model = os.getenv("PREMIUM_MODEL_PATH", "ml/premium/premium_model.pkl")
-    claim_model = os.getenv("CLAIM_MODEL_PATH", "ml/claim_fraud/claim_fraud_model.pkl")
-    if os.path.exists(premium_model) and os.path.exists(claim_model):
+    if _model_exists("PREMIUM_MODEL_PATH", "ml/premium/premium_model.pkl") and _model_exists("CLAIM_MODEL_PATH", "ml/claim_fraud/claim_fraud_model.pkl"):
         checks["ml"] = "ok"
 
     rpc_url = os.getenv("WEB3_RPC_URL")
