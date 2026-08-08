@@ -13,14 +13,16 @@ export declare namespace InsuranceTypes {
     }
 
   export interface InsurancePolicyInterface extends Interface {
-    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "INSURANCE_COMPANY_ROLE" | "PAUSER_ROLE" | "POLICY_DURATION" | "cancelPolicy" | "driverRegistry" | "getPolicy" | "getRoleAdmin" | "grantRole" | "hasRole" | "insurancePool" | "isPolicyActive" | "pause" | "paused" | "purchasePolicy" | "renewPolicy" | "renounceRole" | "revokeRole" | "safetyScoreOracle" | "supportsInterface" | "unpause" | "updatePremium"): FunctionFragment;
+    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "DURATION_30_DAYS" | "DURATION_7_DAYS" | "DURATION_90_DAYS" | "INSURANCE_COMPANY_ROLE" | "PAUSER_ROLE" | "cancelPolicy" | "driverRegistry" | "getPolicy" | "getRoleAdmin" | "grantRole" | "hasRole" | "insurancePool" | "isPolicyActive" | "pause" | "paused" | "purchasePolicy" | "purchasePolicyFor" | "renewPolicy" | "renounceRole" | "revokeRole" | "safetyScoreOracle" | "supportsInterface" | "unpause" | "updatePremium"): FunctionFragment;
 
     getEvent(nameOrSignatureOrTopic: "EmergencyPaused" | "EmergencyUnpaused" | "Paused" | "PolicyCancelled" | "PolicyPurchased" | "PolicyRenewed" | "PremiumUpdated" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "Unpaused"): EventFragment;
 
     encodeFunctionData(functionFragment: 'DEFAULT_ADMIN_ROLE', values?: undefined): string;
+encodeFunctionData(functionFragment: 'DURATION_30_DAYS', values?: undefined): string;
+encodeFunctionData(functionFragment: 'DURATION_7_DAYS', values?: undefined): string;
+encodeFunctionData(functionFragment: 'DURATION_90_DAYS', values?: undefined): string;
 encodeFunctionData(functionFragment: 'INSURANCE_COMPANY_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'PAUSER_ROLE', values?: undefined): string;
-encodeFunctionData(functionFragment: 'POLICY_DURATION', values?: undefined): string;
 encodeFunctionData(functionFragment: 'cancelPolicy', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'driverRegistry', values?: undefined): string;
 encodeFunctionData(functionFragment: 'getPolicy', values: [BigNumberish]): string;
@@ -31,8 +33,9 @@ encodeFunctionData(functionFragment: 'insurancePool', values?: undefined): strin
 encodeFunctionData(functionFragment: 'isPolicyActive', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'pause', values?: undefined): string;
 encodeFunctionData(functionFragment: 'paused', values?: undefined): string;
-encodeFunctionData(functionFragment: 'purchasePolicy', values: [BigNumberish, BigNumberish]): string;
-encodeFunctionData(functionFragment: 'renewPolicy', values: [BigNumberish, BigNumberish]): string;
+encodeFunctionData(functionFragment: 'purchasePolicy', values: [BigNumberish, BigNumberish, BigNumberish]): string;
+encodeFunctionData(functionFragment: 'purchasePolicyFor', values: [AddressLike, BigNumberish, BigNumberish, BigNumberish]): string;
+encodeFunctionData(functionFragment: 'renewPolicy', values: [BigNumberish, BigNumberish, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'renounceRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'revokeRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'safetyScoreOracle', values?: undefined): string;
@@ -41,9 +44,11 @@ encodeFunctionData(functionFragment: 'unpause', values?: undefined): string;
 encodeFunctionData(functionFragment: 'updatePremium', values: [BigNumberish, BigNumberish]): string;
 
     decodeFunctionResult(functionFragment: 'DEFAULT_ADMIN_ROLE', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'DURATION_30_DAYS', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'DURATION_7_DAYS', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'DURATION_90_DAYS', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'INSURANCE_COMPANY_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'PAUSER_ROLE', data: BytesLike): Result;
-decodeFunctionResult(functionFragment: 'POLICY_DURATION', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'cancelPolicy', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'driverRegistry', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getPolicy', data: BytesLike): Result;
@@ -55,6 +60,7 @@ decodeFunctionResult(functionFragment: 'isPolicyActive', data: BytesLike): Resul
 decodeFunctionResult(functionFragment: 'pause', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'paused', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'purchasePolicy', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'purchasePolicyFor', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renewPolicy', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renounceRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
@@ -239,6 +245,30 @@ decodeFunctionResult(functionFragment: 'updatePremium', data: BytesLike): Result
     
 
     
+    DURATION_30_DAYS: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    DURATION_7_DAYS: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    DURATION_90_DAYS: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
     INSURANCE_COMPANY_ROLE: TypedContractMethod<
       [],
       [string],
@@ -250,14 +280,6 @@ decodeFunctionResult(functionFragment: 'updatePremium', data: BytesLike): Result
     PAUSER_ROLE: TypedContractMethod<
       [],
       [string],
-      'view'
-    >
-    
-
-    
-    POLICY_DURATION: TypedContractMethod<
-      [],
-      [bigint],
       'view'
     >
     
@@ -344,7 +366,15 @@ decodeFunctionResult(functionFragment: 'updatePremium', data: BytesLike): Result
 
     
     purchasePolicy: TypedContractMethod<
-      [basePremium: BigNumberish, coverageAmount: BigNumberish, ],
+      [premium: BigNumberish, coverageAmount: BigNumberish, durationSeconds: BigNumberish, ],
+      [bigint],
+      'payable'
+    >
+    
+
+    
+    purchasePolicyFor: TypedContractMethod<
+      [driver: AddressLike, premium: BigNumberish, coverageAmount: BigNumberish, durationSeconds: BigNumberish, ],
       [bigint],
       'payable'
     >
@@ -352,7 +382,7 @@ decodeFunctionResult(functionFragment: 'updatePremium', data: BytesLike): Result
 
     
     renewPolicy: TypedContractMethod<
-      [policyId: BigNumberish, newBasePremium: BigNumberish, ],
+      [policyId: BigNumberish, newPremium: BigNumberish, durationSeconds: BigNumberish, ],
       [void],
       'payable'
     >
@@ -414,6 +444,21 @@ decodeFunctionResult(functionFragment: 'updatePremium', data: BytesLike): Result
       [string],
       'view'
     >;
+getFunction(nameOrSignature: 'DURATION_30_DAYS'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'DURATION_7_DAYS'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'DURATION_90_DAYS'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
 getFunction(nameOrSignature: 'INSURANCE_COMPANY_ROLE'): TypedContractMethod<
       [],
       [string],
@@ -422,11 +467,6 @@ getFunction(nameOrSignature: 'INSURANCE_COMPANY_ROLE'): TypedContractMethod<
 getFunction(nameOrSignature: 'PAUSER_ROLE'): TypedContractMethod<
       [],
       [string],
-      'view'
-    >;
-getFunction(nameOrSignature: 'POLICY_DURATION'): TypedContractMethod<
-      [],
-      [bigint],
       'view'
     >;
 getFunction(nameOrSignature: 'cancelPolicy'): TypedContractMethod<
@@ -480,12 +520,17 @@ getFunction(nameOrSignature: 'paused'): TypedContractMethod<
       'view'
     >;
 getFunction(nameOrSignature: 'purchasePolicy'): TypedContractMethod<
-      [basePremium: BigNumberish, coverageAmount: BigNumberish, ],
+      [premium: BigNumberish, coverageAmount: BigNumberish, durationSeconds: BigNumberish, ],
+      [bigint],
+      'payable'
+    >;
+getFunction(nameOrSignature: 'purchasePolicyFor'): TypedContractMethod<
+      [driver: AddressLike, premium: BigNumberish, coverageAmount: BigNumberish, durationSeconds: BigNumberish, ],
       [bigint],
       'payable'
     >;
 getFunction(nameOrSignature: 'renewPolicy'): TypedContractMethod<
-      [policyId: BigNumberish, newBasePremium: BigNumberish, ],
+      [policyId: BigNumberish, newPremium: BigNumberish, durationSeconds: BigNumberish, ],
       [void],
       'payable'
     >;

@@ -43,7 +43,7 @@ CLAIM_MANAGER_ABI = [
     {"inputs":[{"internalType":"uint256","name":"claimId","type":"uint256"}],"name":"authorizeClaim","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"claimId","type":"uint256"}],"name":"approveClaim","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"uint256","name":"claimId","type":"uint256"}],"name":"getClaim","outputs":[{"components":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"uint256","name":"policyId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bool","name":"submitted","type":"bool"},{"internalType":"bool","name":"accidentVerified","type":"bool"},{"internalType":"bool","name":"approved","type":"bool"},{"internalType":"bool","name":"paid","type":"bool"}],"internalType":"struct InsuranceTypes.Claim","name":"claim","type":"tuple"}],"stateMutability":"view","type":"function"}],
-]
+
 
 
 def _w3() -> Web3:

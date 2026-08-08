@@ -10,32 +10,32 @@ import * as Contracts from "./index.js";
 
 declare module "@nomicfoundation/hardhat-ethers/types" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
-  getContractFactory(name: 'InsurancePool', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.InsurancePool__factory>
+  getContractFactory(name: 'ClaimManager', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ClaimManager__factory>
 getContractFactory(name: 'DriverRegistry', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.DriverRegistry__factory>
-getContractFactory(name: 'InsurancePolicy', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.InsurancePolicy__factory>
+getContractFactory(name: 'InsurancePool', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.InsurancePool__factory>
 getContractFactory(name: 'SafetyScoreOracle', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.SafetyScoreOracle__factory>
-getContractFactory(name: 'ClaimManager', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.ClaimManager__factory>
+getContractFactory(name: 'InsurancePolicy', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.InsurancePolicy__factory>
 getContractFactory(name: 'InsuranceEvents', signerOrOptions?: ethers.Signer | FactoryOptions): Promise<Contracts.InsuranceEvents__factory>
 
-  getContractAt(name: 'InsurancePool', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.InsurancePool>
+  getContractAt(name: 'ClaimManager', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ClaimManager>
 getContractAt(name: 'DriverRegistry', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.DriverRegistry>
-getContractAt(name: 'InsurancePolicy', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.InsurancePolicy>
+getContractAt(name: 'InsurancePool', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.InsurancePool>
 getContractAt(name: 'SafetyScoreOracle', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.SafetyScoreOracle>
-getContractAt(name: 'ClaimManager', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.ClaimManager>
+getContractAt(name: 'InsurancePolicy', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.InsurancePolicy>
 getContractAt(name: 'InsuranceEvents', address: string | ethers.Addressable, signer?: ethers.Signer): Promise<Contracts.InsuranceEvents>
 
-  deployContract(name: 'InsurancePool', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePool>
+  deployContract(name: 'ClaimManager', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ClaimManager>
 deployContract(name: 'DriverRegistry', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.DriverRegistry>
-deployContract(name: 'InsurancePolicy', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePolicy>
+deployContract(name: 'InsurancePool', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePool>
 deployContract(name: 'SafetyScoreOracle', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.SafetyScoreOracle>
-deployContract(name: 'ClaimManager', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ClaimManager>
+deployContract(name: 'InsurancePolicy', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePolicy>
 deployContract(name: 'InsuranceEvents', signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsuranceEvents>
 
-  deployContract(name: 'InsurancePool', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePool>
+  deployContract(name: 'ClaimManager', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ClaimManager>
 deployContract(name: 'DriverRegistry', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.DriverRegistry>
-deployContract(name: 'InsurancePolicy', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePolicy>
+deployContract(name: 'InsurancePool', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePool>
 deployContract(name: 'SafetyScoreOracle', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.SafetyScoreOracle>
-deployContract(name: 'ClaimManager', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.ClaimManager>
+deployContract(name: 'InsurancePolicy', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsurancePolicy>
 deployContract(name: 'InsuranceEvents', args: any[], signerOrOptions?: ethers.Signer | DeployContractOptions): Promise<Contracts.InsuranceEvents>
 
     // default types

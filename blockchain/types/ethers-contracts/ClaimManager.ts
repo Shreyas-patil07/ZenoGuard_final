@@ -13,15 +13,16 @@ export declare namespace InsuranceTypes {
     }
 
   export interface ClaimManagerInterface extends Interface {
-    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "INSURANCE_COMPANY_ROLE" | "ORACLE_ROLE" | "PAUSER_ROLE" | "approveClaim" | "getClaim" | "getPendingClaim" | "getRoleAdmin" | "grantRole" | "hasRole" | "insurancePolicy" | "insurancePool" | "isClaimRejected" | "pause" | "paused" | "rejectClaim" | "renounceRole" | "revokeRole" | "submitClaim" | "supportsInterface" | "unpause" | "verifyAccident"): FunctionFragment;
+    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "INSURANCE_COMPANY_ROLE" | "ORACLE_ROLE" | "PAUSER_ROLE" | "approveClaim" | "authorizeClaim" | "getClaim" | "getPendingClaim" | "getRoleAdmin" | "grantRole" | "hasRole" | "insurancePolicy" | "insurancePool" | "isClaimRejected" | "pause" | "paused" | "rejectClaim" | "renounceRole" | "revokeRole" | "submitClaim" | "submitClaimFor" | "supportsInterface" | "unpause" | "verifyAccident"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "ClaimApproved" | "ClaimRejected" | "ClaimSubmitted" | "EmergencyPaused" | "EmergencyUnpaused" | "Paused" | "PayoutCompleted" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "Unpaused"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "ClaimApproved" | "ClaimAuthorized" | "ClaimRejected" | "ClaimSubmitted" | "EmergencyPaused" | "EmergencyUnpaused" | "Paused" | "PayoutCompleted" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "Unpaused"): EventFragment;
 
     encodeFunctionData(functionFragment: 'DEFAULT_ADMIN_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'INSURANCE_COMPANY_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'ORACLE_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'PAUSER_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'approveClaim', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'authorizeClaim', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getClaim', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getPendingClaim', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getRoleAdmin', values: [BytesLike]): string;
@@ -36,6 +37,7 @@ encodeFunctionData(functionFragment: 'rejectClaim', values: [BigNumberish, strin
 encodeFunctionData(functionFragment: 'renounceRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'revokeRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'submitClaim', values: [BigNumberish, BigNumberish]): string;
+encodeFunctionData(functionFragment: 'submitClaimFor', values: [AddressLike, BigNumberish, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'supportsInterface', values: [BytesLike]): string;
 encodeFunctionData(functionFragment: 'unpause', values?: undefined): string;
 encodeFunctionData(functionFragment: 'verifyAccident', values: [BigNumberish, boolean]): string;
@@ -45,6 +47,7 @@ decodeFunctionResult(functionFragment: 'INSURANCE_COMPANY_ROLE', data: BytesLike
 decodeFunctionResult(functionFragment: 'ORACLE_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'PAUSER_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'approveClaim', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'authorizeClaim', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getClaim', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getPendingClaim', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getRoleAdmin', data: BytesLike): Result;
@@ -59,6 +62,7 @@ decodeFunctionResult(functionFragment: 'rejectClaim', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renounceRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'submitClaim', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'submitClaimFor', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'verifyAccident', data: BytesLike): Result;
@@ -69,6 +73,18 @@ decodeFunctionResult(functionFragment: 'verifyAccident', data: BytesLike): Resul
       export type InputTuple = [claimId: BigNumberish, approvedBy: AddressLike];
       export type OutputTuple = [claimId: bigint, approvedBy: string];
       export interface OutputObject {claimId: bigint, approvedBy: string };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace ClaimAuthorizedEvent {
+      export type InputTuple = [claimId: BigNumberish, authorizedBy: AddressLike];
+      export type OutputTuple = [claimId: bigint, authorizedBy: string];
+      export interface OutputObject {claimId: bigint, authorizedBy: string };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -271,6 +287,14 @@ decodeFunctionResult(functionFragment: 'verifyAccident', data: BytesLike): Resul
     
 
     
+    authorizeClaim: TypedContractMethod<
+      [claimId: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >
+    
+
+    
     getClaim: TypedContractMethod<
       [claimId: BigNumberish, ],
       [InsuranceTypes.ClaimStructOutput],
@@ -383,6 +407,14 @@ decodeFunctionResult(functionFragment: 'verifyAccident', data: BytesLike): Resul
     
 
     
+    submitClaimFor: TypedContractMethod<
+      [driver: AddressLike, policyId: BigNumberish, amount: BigNumberish, ],
+      [bigint],
+      'nonpayable'
+    >
+    
+
+    
     supportsInterface: TypedContractMethod<
       [interfaceId: BytesLike, ],
       [boolean],
@@ -430,6 +462,11 @@ getFunction(nameOrSignature: 'PAUSER_ROLE'): TypedContractMethod<
       'view'
     >;
 getFunction(nameOrSignature: 'approveClaim'): TypedContractMethod<
+      [claimId: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >;
+getFunction(nameOrSignature: 'authorizeClaim'): TypedContractMethod<
       [claimId: BigNumberish, ],
       [void],
       'nonpayable'
@@ -504,6 +541,11 @@ getFunction(nameOrSignature: 'submitClaim'): TypedContractMethod<
       [bigint],
       'nonpayable'
     >;
+getFunction(nameOrSignature: 'submitClaimFor'): TypedContractMethod<
+      [driver: AddressLike, policyId: BigNumberish, amount: BigNumberish, ],
+      [bigint],
+      'nonpayable'
+    >;
 getFunction(nameOrSignature: 'supportsInterface'): TypedContractMethod<
       [interfaceId: BytesLike, ],
       [boolean],
@@ -521,6 +563,7 @@ getFunction(nameOrSignature: 'verifyAccident'): TypedContractMethod<
     >;
 
     getEvent(key: 'ClaimApproved'): TypedContractEvent<ClaimApprovedEvent.InputTuple, ClaimApprovedEvent.OutputTuple, ClaimApprovedEvent.OutputObject>;
+getEvent(key: 'ClaimAuthorized'): TypedContractEvent<ClaimAuthorizedEvent.InputTuple, ClaimAuthorizedEvent.OutputTuple, ClaimAuthorizedEvent.OutputObject>;
 getEvent(key: 'ClaimRejected'): TypedContractEvent<ClaimRejectedEvent.InputTuple, ClaimRejectedEvent.OutputTuple, ClaimRejectedEvent.OutputObject>;
 getEvent(key: 'ClaimSubmitted'): TypedContractEvent<ClaimSubmittedEvent.InputTuple, ClaimSubmittedEvent.OutputTuple, ClaimSubmittedEvent.OutputObject>;
 getEvent(key: 'EmergencyPaused'): TypedContractEvent<EmergencyPausedEvent.InputTuple, EmergencyPausedEvent.OutputTuple, EmergencyPausedEvent.OutputObject>;
@@ -536,6 +579,10 @@ getEvent(key: 'Unpaused'): TypedContractEvent<UnpausedEvent.InputTuple, Unpaused
       
       'ClaimApproved(uint256,address)': TypedContractEvent<ClaimApprovedEvent.InputTuple, ClaimApprovedEvent.OutputTuple, ClaimApprovedEvent.OutputObject>;
       ClaimApproved: TypedContractEvent<ClaimApprovedEvent.InputTuple, ClaimApprovedEvent.OutputTuple, ClaimApprovedEvent.OutputObject>;
+    
+
+      'ClaimAuthorized(uint256,address)': TypedContractEvent<ClaimAuthorizedEvent.InputTuple, ClaimAuthorizedEvent.OutputTuple, ClaimAuthorizedEvent.OutputObject>;
+      ClaimAuthorized: TypedContractEvent<ClaimAuthorizedEvent.InputTuple, ClaimAuthorizedEvent.OutputTuple, ClaimAuthorizedEvent.OutputObject>;
     
 
       'ClaimRejected(uint256,string,address)': TypedContractEvent<ClaimRejectedEvent.InputTuple, ClaimRejectedEvent.OutputTuple, ClaimRejectedEvent.OutputObject>;

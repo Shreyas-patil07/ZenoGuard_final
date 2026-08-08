@@ -13,7 +13,7 @@ export declare namespace InsuranceTypes {
     }
 
   export interface DriverRegistryInterface extends Interface {
-    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "PAUSER_ROLE" | "POLICY_MANAGER_ROLE" | "getDriver" | "getRoleAdmin" | "grantRole" | "hasRole" | "isRegistered" | "linkPolicy" | "pause" | "paused" | "registerDriver" | "renounceRole" | "revokeRole" | "supportsInterface" | "unpause"): FunctionFragment;
+    getFunction(nameOrSignature: "DEFAULT_ADMIN_ROLE" | "PAUSER_ROLE" | "POLICY_MANAGER_ROLE" | "getDriver" | "getRoleAdmin" | "grantRole" | "hasRole" | "isRegistered" | "linkPolicy" | "pause" | "paused" | "registerDriver" | "registerDriverFor" | "renounceRole" | "revokeRole" | "supportsInterface" | "unpause"): FunctionFragment;
 
     getEvent(nameOrSignatureOrTopic: "DriverRegistered" | "EmergencyPaused" | "EmergencyUnpaused" | "Paused" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "Unpaused"): EventFragment;
 
@@ -29,6 +29,7 @@ encodeFunctionData(functionFragment: 'linkPolicy', values: [AddressLike, BigNumb
 encodeFunctionData(functionFragment: 'pause', values?: undefined): string;
 encodeFunctionData(functionFragment: 'paused', values?: undefined): string;
 encodeFunctionData(functionFragment: 'registerDriver', values: [BytesLike]): string;
+encodeFunctionData(functionFragment: 'registerDriverFor', values: [AddressLike, BytesLike]): string;
 encodeFunctionData(functionFragment: 'renounceRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'revokeRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'supportsInterface', values: [BytesLike]): string;
@@ -46,6 +47,7 @@ decodeFunctionResult(functionFragment: 'linkPolicy', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'pause', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'paused', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'registerDriver', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'registerDriverFor', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'renounceRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Result;
@@ -279,6 +281,14 @@ decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
     
 
     
+    registerDriverFor: TypedContractMethod<
+      [wallet: AddressLike, driverId: BytesLike, ],
+      [void],
+      'nonpayable'
+    >
+    
+
+    
     renounceRole: TypedContractMethod<
       [role: BytesLike, callerConfirmation: AddressLike, ],
       [void],
@@ -370,6 +380,11 @@ getFunction(nameOrSignature: 'paused'): TypedContractMethod<
     >;
 getFunction(nameOrSignature: 'registerDriver'): TypedContractMethod<
       [driverId: BytesLike, ],
+      [void],
+      'nonpayable'
+    >;
+getFunction(nameOrSignature: 'registerDriverFor'): TypedContractMethod<
+      [wallet: AddressLike, driverId: BytesLike, ],
       [void],
       'nonpayable'
     >;
