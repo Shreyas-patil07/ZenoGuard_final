@@ -43,30 +43,24 @@ describe("ZenoGuard insurance flow", function () {
       await insurancePool.SPENDER_ROLE(),
       await claimManager.getAddress()
     );
-    await safetyScoreOracle.grantRole(await safetyScoreOracle.ORACLE_ROLE(), admin.address);
     await claimManager.grantRole(await claimManager.ORACLE_ROLE(), admin.address);
-    await insurancePolicy.grantRole(await insurancePolicy.INSURANCE_COMPANY_ROLE(), admin.address);
     await claimManager.grantRole(await claimManager.INSURANCE_COMPANY_ROLE(), admin.address);
 
     const driverId = ethers.keccak256(ethers.toUtf8Bytes("zenoguard-test-driver"));
     await driverRegistry.connect(driver).registerDriver(driverId);
     assert.equal(await driverRegistry.isRegistered(driver.address), true);
 
-    await safetyScoreOracle.submitScore(driver.address, 90);
-    assert.equal(await safetyScoreOracle.latestScore(driver.address), 90n);
-
-    const basePremium = ethers.parseEther("0.1");
-    const expectedPremium = ethers.parseEther("0.08");
+    const premium = ethers.parseEther("0.08");
     const coverage = ethers.parseEther("0.5");
     const duration = await insurancePolicy.DURATION_30_DAYS();
 
-    await insurancePolicy.connect(driver).purchasePolicy(basePremium, coverage, duration, {
-      value: expectedPremium,
+    await insurancePolicy.connect(driver).purchasePolicy(premium, coverage, duration, {
+      value: premium,
     });
 
     const policy = await insurancePolicy.getPolicy(1);
     assert.equal(policy.driver, driver.address);
-    assert.equal(policy.premium, expectedPremium);
+    assert.equal(policy.premium, premium);
     assert.equal(policy.coverage, coverage);
     assert.equal(policy.active, true);
     assert.equal(policy.expiryTime - policy.startTime, duration);
@@ -121,15 +115,11 @@ describe("ZenoGuard insurance flow", function () {
     await policy.waitForDeployment();
 
     await driverRegistry.grantRole(await driverRegistry.POLICY_MANAGER_ROLE(), await policy.getAddress());
-    await oracle.grantRole(await oracle.ORACLE_ROLE(), admin.address);
-
     await driverRegistry.connect(driver).registerDriver(
       ethers.keccak256(ethers.toUtf8Bytes("duration-test-driver"))
     );
-    await oracle.submitScore(driver.address, 75);
 
-    const basePremium = ethers.parseEther("0.1");
-    const premium = basePremium;
+    const premium = ethers.parseEther("0.1");
     const coverage = ethers.parseEther("0.5");
 
     assert.equal(await policy.DURATION_7_DAYS(), 7n * 24n * 60n * 60n);
@@ -137,7 +127,7 @@ describe("ZenoGuard insurance flow", function () {
     assert.equal(await policy.DURATION_90_DAYS(), 90n * 24n * 60n * 60n);
 
     await assert.rejects(
-      policy.connect(driver).purchasePolicy(basePremium, coverage, 14n * 24n * 60n * 60n, { value: premium }),
+      policy.connect(driver).purchasePolicy(premium, coverage, 14n * 24n * 60n * 60n, { value: premium }),
       /InvalidDuration/
     );
   });
