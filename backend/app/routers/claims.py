@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Claim, Policy
+from ..models import Claim, Policy, Payout
 from ..routers.auth import get_current_user
 from ..schemas import ClaimCreate
 from ..services.claim_verification import verify_claim
+from ..services.razorpay_service import RazorpayConfigError, create_vpa_payout
 from ..services.risk_engine import get_payout_amount
 
 router = APIRouter(prefix="/claims", tags=["claims"])
@@ -54,8 +55,47 @@ def claim_dict(claim: Claim) -> dict:
         "verification_status": claim.verification_status,
         "evidence": claim.screenshot_url,
         "potential_benefit": get_payout_amount(claim.event_type, claim.policy.tier),
+        "payout": {
+            "id": claim.payout.id,
+            "amount": claim.payout.amount,
+            "status": claim.payout.status,
+            "tx_id": claim.payout.tx_hash,
+        } if claim.payout else None,
         "payout_tx_hash": claim.payout.tx_hash if claim.payout else None,
     }
+
+
+def _trigger_auto_payout(db: Session, claim: Claim, current_user) -> None:
+    if claim.verification_status != "VALID":
+        return
+    if not current_user.razorpay_fund_account_id:
+        return
+    if claim.payout and claim.payout.status in {"PROCESSING", "SUCCESS", "COMPLETED"}:
+        return
+
+    amount = float(get_payout_amount(claim.event_type, claim.policy.tier))
+    payout_record = claim.payout or Payout(claim_id=claim.id, amount=amount, status="PENDING")
+    if payout_record not in db:
+        db.add(payout_record)
+        db.flush()
+
+    try:
+        result = create_vpa_payout(
+            fund_account_id=current_user.razorpay_fund_account_id,
+            amount_inr=amount,
+            reference_id=f"CLM-{claim.id}",
+        )
+        payout_record.tx_hash = result.get("id")
+        payout_record.status = result.get("status", "PROCESSING").upper()
+        claim.payout_tx_hash = result.get("id")
+        db.commit()
+    except RazorpayConfigError:
+        payout_record.status = "PENDING"
+        db.commit()
+    except Exception as exc:
+        payout_record.status = "FAILED"
+        db.commit()
+        raise HTTPException(status_code=502, detail=f"Claim verified, but automatic Razorpay payout failed: {exc}")
 
 
 @router.post("/submit", status_code=status.HTTP_201_CREATED)
@@ -101,10 +141,15 @@ def submit_claim(
     db.commit()
     db.refresh(claim)
 
+    if claim.verification_status == "VALID":
+        _trigger_auto_payout(db, claim, current_user)
+        db.refresh(claim)
+
     response = claim_dict(claim)
     response.update({
         "message": "Claim submitted and verification completed.",
         "verification": verification,
+        "auto_payout": bool(claim.payout and claim.payout.status != "PENDING"),
     })
     return response
 
