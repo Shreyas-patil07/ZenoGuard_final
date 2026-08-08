@@ -5,7 +5,6 @@ describe("ZenoGuard insurance flow", function () {
   it("registers a driver, purchases a policy, verifies a claim, and pays out", async function () {
     const { ethers } = await hre.network.connect();
     const [admin, driver] = await ethers.getSigners();
-
     const DriverRegistry = await ethers.getContractFactory("DriverRegistry");
     const driverRegistry = await DriverRegistry.deploy(admin.address);
     await driverRegistry.waitForDeployment();
