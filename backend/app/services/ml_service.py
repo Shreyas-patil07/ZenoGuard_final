@@ -1,10 +1,31 @@
 from pathlib import Path
+
 import joblib
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[3]
 PREMIUM_MODEL_PATH = ROOT / "ml" / "premium" / "models" / "premium_model.pkl"
 CLAIM_MODEL_PATH = ROOT / "ml" / "claim_fraud" / "models" / "claim_fraud_model.pkl"
+
+PREMIUM_FEATURE_DEFAULTS = {
+    "platform": "Swiggy",
+    "worker_type": "Delivery",
+    "location": "Mumbai",
+    "age": 24,
+    "experience_months": 12,
+    "working_hours": 8.0,
+    "daily_income": 0.0,
+    "avg_daily_distance_km": 50.0,
+    "weather_risk": 0.50,
+    "traffic_risk": 0.50,
+    "area_risk": 0.50,
+    "night_work_ratio": 0.20,
+    "historical_incidents": 0,
+    "safety_score": 0.75,
+    "days_active_last_30": 25,
+    "previous_claims": 0,
+    "avg_trip_duration_min": 25.0,
+}
 
 
 def _load_model(path: Path):
@@ -13,9 +34,16 @@ def _load_model(path: Path):
     return joblib.load(path)
 
 
+def build_premium_features(worker_data: dict | None = None) -> dict:
+    """Build the exact 17-feature input expected by the trained premium pipeline."""
+    data = {**PREMIUM_FEATURE_DEFAULTS, **(worker_data or {})}
+    return {key: data[key] for key in PREMIUM_FEATURE_DEFAULTS}
+
+
 def predict_premium(worker_data: dict) -> float:
+    features = build_premium_features(worker_data)
     model = _load_model(PREMIUM_MODEL_PATH)
-    return round(float(model.predict(pd.DataFrame([worker_data]))[0]), 2)
+    return round(float(model.predict(pd.DataFrame([features]))[0]), 2)
 
 
 def predict_claim(claim_data: dict) -> dict:
