@@ -27,6 +27,19 @@ PREMIUM_FEATURE_DEFAULTS = {
     "avg_trip_duration_min": 25.0,
 }
 
+CLAIM_FEATURE_DEFAULTS = {
+    "claim_amount": 0.0,
+    "previous_claims": 0,
+    "days_since_last_claim": 365,
+    "evidence_quality": 1.0,
+    "policy_age_days": 0,
+    "hours_worked": 8.0,
+    "location_consistency": 1.0,
+    "event_consistency": 1.0,
+    "duplicate_signal": 0,
+    "work_session_active": 1,
+}
+
 
 def _load_model(path: Path):
     if not path.exists():
@@ -35,7 +48,6 @@ def _load_model(path: Path):
 
 
 def build_premium_features(worker_data: dict | None = None) -> dict:
-    """Build the exact 17-feature input expected by the trained premium pipeline."""
     data = {**PREMIUM_FEATURE_DEFAULTS, **(worker_data or {})}
     return {key: data[key] for key in PREMIUM_FEATURE_DEFAULTS}
 
@@ -46,11 +58,25 @@ def predict_premium(worker_data: dict) -> float:
     return round(float(model.predict(pd.DataFrame([features]))[0]), 2)
 
 
+def _claim_features(model, claim_data: dict) -> dict:
+    data = {**CLAIM_FEATURE_DEFAULTS, **(claim_data or {})}
+    names = getattr(model, "feature_names_in_", None)
+    if names is None and hasattr(model, "named_steps"):
+        for step in reversed(list(model.named_steps.values())):
+            names = getattr(step, "feature_names_in_", None)
+            if names is not None:
+                break
+    if names is None:
+        return data
+    return {name: data.get(name, 0.0) for name in names}
+
+
 def predict_claim(claim_data: dict) -> dict:
     artifact = _load_model(CLAIM_MODEL_PATH)
     model = artifact["model"]
     threshold = float(artifact.get("threshold", 0.50))
-    probability = float(model.predict_proba(pd.DataFrame([claim_data]))[0][1])
+    features = _claim_features(model, claim_data)
+    probability = float(model.predict_proba(pd.DataFrame([features]))[0][1])
 
     if probability < 0.30:
         decision = "VALID"
