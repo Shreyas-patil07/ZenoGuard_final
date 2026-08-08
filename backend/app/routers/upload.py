@@ -4,8 +4,10 @@ import os
 import cloudinary
 import cloudinary.uploader
 from dotenv import load_dotenv
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from PIL import Image, ImageFilter, ImageStat
+
+from ..routers.auth import get_current_user
 
 load_dotenv()
 
@@ -22,7 +24,10 @@ ALLOWED = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
 
 
 @router.post("/evidence")
-async def upload_evidence(file: UploadFile = File(...)):
+async def upload_evidence(
+    file: UploadFile = File(...),
+    current_user=Depends(get_current_user),
+):
     content_type = (file.content_type or "").lower()
     if content_type not in ALLOWED:
         raise HTTPException(status_code=415, detail="Upload a JPG, PNG, or WebP image.")
