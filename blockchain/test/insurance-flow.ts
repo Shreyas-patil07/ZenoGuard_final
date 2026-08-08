@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { ethers } from "hardhat";
+import hre from "hardhat";
 
 describe("ZenoGuard insurance flow", function () {
   it("registers a driver, purchases a policy, verifies a claim, and pays out", async function () {
+    const { ethers } = await hre.network.connect();
     const [admin, driver] = await ethers.getSigners();
 
     const DriverRegistry = await ethers.getContractFactory("DriverRegistry");
@@ -49,7 +50,7 @@ describe("ZenoGuard insurance flow", function () {
     await claimManager.grantRole(await claimManager.INSURANCE_COMPANY_ROLE(), admin.address);
 
     const driverId = ethers.keccak256(ethers.toUtf8Bytes("zenoguard-test-driver"));
-    await driver.connect(driver).registerDriver(driverId);
+    await driverRegistry.connect(driver).registerDriver(driverId);
 
     assert.equal(await driverRegistry.isRegistered(driver.address), true);
 
