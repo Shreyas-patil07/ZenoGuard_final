@@ -3,8 +3,9 @@ import hre from "hardhat";
 
 describe("ZenoGuard insurance flow", function () {
   it("registers a driver, purchases a policy, verifies a claim, and pays out", async function () {
-    const { ethers } = await hre.network.connect();
+    const { ethers } = await hre.network.create();
     const [admin, driver] = await ethers.getSigners();
+
     const DriverRegistry = await ethers.getContractFactory("DriverRegistry");
     const driverRegistry = await DriverRegistry.deploy(admin.address);
     await driverRegistry.waitForDeployment();
@@ -53,7 +54,6 @@ describe("ZenoGuard insurance flow", function () {
 
     assert.equal(await driverRegistry.isRegistered(driver.address), true);
 
-    // High safety score gives the 20% on-chain discount.
     await safetyScoreOracle.submitScore(driver.address, 90);
     assert.equal(await safetyScoreOracle.latestScore(driver.address), 90);
 
@@ -72,7 +72,6 @@ describe("ZenoGuard insurance flow", function () {
     assert.equal(policy.coverage, coverage);
     assert.equal(policy.active, true);
 
-    // Premium alone is smaller than the test payout, so fund the pool first.
     await insurancePool.deposit({ value: ethers.parseEther("1") });
 
     const claimTx = await claimManager.connect(driver).submitClaim(1, coverage);
