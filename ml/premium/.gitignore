@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Exclude claim fraud files (not part of this repo)
+claim_fraud_predictor.py
+claim_fraud_training_data.csv
+gig_worker_insurance_synthetic.csv
+models/claim_fraud_model.pkl
+test_claim.py
+test_claim copy.py

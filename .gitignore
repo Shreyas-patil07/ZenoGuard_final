@@ -1,0 +1,24 @@
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.db
+**/*.db
+.pytest_cache/
+dist/
+build/
+.DS_Store
+
+# Hardhat generated files
+artifacts/
+cache/
+blockchain/artifacts/
+blockchain/cache/
