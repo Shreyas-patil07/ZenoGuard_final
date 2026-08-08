@@ -14,3 +14,4 @@ joblib
 web3
 python-multipart
 Pillow
+cloudinary
