@@ -18,7 +18,13 @@ def _model_exists(env_name: str, default_relative_path: str) -> bool:
 
 @router.get("/health")
 def health_check():
-    checks = {"api": "ok", "database": "error", "ml": "error", "blockchain": "not_configured"}
+    checks = {
+        "api": "ok",
+        "database": "error",
+        "ml": "error",
+        "blockchain": "not_configured",
+    }
+
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
@@ -28,7 +34,9 @@ def health_check():
     finally:
         db.close()
 
-    if _model_exists("PREMIUM_MODEL_PATH", "ml/premium/premium_model.pkl") and _model_exists("CLAIM_MODEL_PATH", "ml/claim_fraud/claim_fraud_model.pkl"):
+    premium_ok = _model_exists("PREMIUM_MODEL_PATH", "ml/premium/models/premium_model.pkl")
+    claim_ok = _model_exists("CLAIM_MODEL_PATH", "ml/claim_fraud/models/claim_fraud_model.pkl")
+    if premium_ok and claim_ok:
         checks["ml"] = "ok"
 
     rpc_url = os.getenv("WEB3_RPC_URL")
