@@ -12,13 +12,13 @@ def migrate_sqlite():
     connection = sqlite3.connect(path)
     try:
         cursor = connection.cursor()
-        columns = {row[1] for row in cursor.execute("PRAGMA table_info(riders)")}
+        rider_columns = {row[1] for row in cursor.execute("PRAGMA table_info(riders)")}
         for name, sql_type in [
             ("phone", "TEXT"),
             ("razorpay_contact_id", "TEXT"),
             ("razorpay_fund_account_id", "TEXT"),
         ]:
-            if name not in columns:
+            if name not in rider_columns:
                 cursor.execute(f"ALTER TABLE riders ADD COLUMN {name} {sql_type}")
 
         tables = {row[0] for row in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")}
@@ -43,6 +43,12 @@ def migrate_sqlite():
                     FOREIGN KEY(policy_id) REFERENCES policies(id)
                 )"""
             )
+
+        if "payouts" in tables:
+            payout_columns = {row[1] for row in cursor.execute("PRAGMA table_info(payouts)")}
+            if "status" not in payout_columns:
+                cursor.execute("ALTER TABLE payouts ADD COLUMN status TEXT NOT NULL DEFAULT 'PENDING'")
+
         connection.commit()
         print("Razorpay SQLite migration complete.")
     finally:
