@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import './App.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const api = axios.create({ baseURL: API_URL, timeout: 15000 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
@@ -141,11 +141,174 @@ function Shell({ title, children }) {
 }
 
 function Dashboard() {
-  const user = userFromStorage(); const [premium,setPremium]=useState(null); const [msg,setMsg]=useState(''); const [earn,setEarn]=useState({income:'',hours_worked:''}); const [busy,setBusy]=useState(false);
-  const load=async()=>{try{const r=await api.get('/premium/calculate');setPremium(r.data)}catch(e){setMsg(e.response?.data?.detail||'Premium endpoint unavailable; use the ML endpoint directly for testing.')}};
-  useEffect(()=>{load()},[]);
-  const save=async e=>{e.preventDefault();setBusy(true);setMsg('');try{await api.post('/earnings/upload',{income:+earn.income,hours_worked:+earn.hours_worked});setMsg('Earnings saved.');setEarn({income:'',hours_worked:''});await load()}catch(e){setMsg(e.response?.data?.detail||'Could not save earnings.')}finally{setBusy(false)}};
-  return <Shell title={`Welcome back, ${user?.name||'Guardian'}.`}><div className="dashboard-grid"><div className="metric-card featured"><div className="metric-label"><ShieldCheck size={17}/> ACTIVE PROTECTION</div><strong>₹{Number(premium?.premium??premium?.recommended_premium??0).toFixed(2)}</strong><span>/ day indicative premium</span><div className="metric-bottom"><span>Risk score {premium?.risk_score??'—'}</span><button onClick={load}><RefreshCw size={15}/></button></div></div><div className="metric-card"><div className="metric-label"><IndianRupee size={17}/> RISK EXPLANATION</div><h3>{premium?.explanation||'Your premium is driven by your current work-risk profile.'}</h3><span>Backend risk engine + ML premium model</span></div><div className="metric-card"><div className="metric-label"><BrainCircuit size={17}/> VERIFICATION</div><h3>ML → Oracle → Claim Manager</h3><span>Blockchain settlement is ready for local/testnet integration.</span></div></div><div className="split-grid"><div className="panel"><div className="eyebrow">EARNINGS</div><h2>Update today's work</h2><form className="inline-form" onSubmit={save}><input type="number" min="0" placeholder="Income ₹" required value={earn.income} onChange={e=>setEarn({...earn,income:e.target.value})}/><input type="number" min="0" step="0.1" placeholder="Hours" required value={earn.hours_worked} onChange={e=>setEarn({...earn,hours_worked:e.target.value})}/><button className="primary-btn" disabled={busy}>{busy?'Saving...':'Save'}</button></form>{msg&&<div className="notice">{msg}</div>}</div><div className="panel claim-cta"><div className="metric-label"><FileWarning size={17}/> CLAIMS</div><h2>Something happened on the road?</h2><p className="muted">Submit the event and let the ML verification layer determine the next state.</p><Link className="primary-btn" to="/claims">Start a claim <ArrowUpRight size={17}/></Link></div></div></Shell>;
+  const user = userFromStorage();
+  const [premium, setPremium] = useState(null);
+  const [msg, setMsg]         = useState('');
+  const [earn, setEarn]       = useState({ income:'', hours_worked:'' });
+  const [busy, setBusy]       = useState(false);
+  const [tier, setTier]       = useState('standard');
+  const [duration, setDuration] = useState(30);
+  const [activePolicy, setActivePolicyDash] = useState(null);
+
+  const TIERS = [
+    { key:'basic',    label:'Basic',    accident:'₹2,500', weather:'₹500' },
+    { key:'standard', label:'Standard', accident:'₹5,000', weather:'₹1,000' },
+    { key:'plus',     label:'Plus',     accident:'₹10,000',weather:'₹2,000' },
+  ];
+
+  const load = async () => {
+    try {
+      const [premRes, apRes] = await Promise.allSettled([
+        api.get(`/premium/calculate?tier=${tier}&duration_days=${duration}`),
+        api.get('/premium/active-policy'),
+      ]);
+      if (premRes.status === 'fulfilled') setPremium(premRes.value.data);
+      if (apRes.status === 'fulfilled') {
+        const ap = apRes.value.data;
+        setActivePolicyDash(ap.has_active_policy ? ap.policy : null);
+        if (ap.has_active_policy && ap.policy) {
+          setTier(ap.policy.tier);
+          setDuration(ap.policy.duration_days);
+        }
+      }
+    } catch(e) {
+      setMsg(e.response?.data?.detail || 'Could not load premium. Make sure the backend is running.');
+    }
+  };
+
+  useEffect(() => { load(); }, [tier, duration]);
+
+  const save = async e => {
+    e.preventDefault(); setBusy(true); setMsg('');
+    try {
+      await api.post('/earnings/upload', { income:+earn.income, hours_worked:+earn.hours_worked });
+      setMsg('Earnings saved.');
+      setEarn({ income:'', hours_worked:'' });
+      await load();
+    } catch(e) {
+      setMsg(e.response?.data?.detail || 'Could not save earnings.');
+    } finally { setBusy(false); }
+  };
+
+  const selectedTier = TIERS.find(t => t.key === tier) || TIERS[1];
+
+  const selectedTierInfo = TIERS.find(t => t.key === tier) || TIERS[1];
+
+  return (
+    <Shell title={`Welcome back, ${user?.name||'Guardian'}.`}>
+      <div className="dashboard-grid">
+        {/* Premium card */}
+        <div className="metric-card featured">
+          <div className="metric-label"><ShieldCheck size={17}/> ACTIVE PROTECTION</div>
+          <strong>₹{Number(premium?.premium ?? 0).toFixed(2)}</strong>
+          <span>/ day · {selectedTierInfo.label} plan · {duration} days</span>
+          {premium?.total_premium && (
+            <span style={{fontSize:12,color:'#94a3b8',marginTop:2}}>
+              Total for {duration} days: ₹{premium.total_premium}
+            </span>
+          )}
+          <div className="metric-bottom">
+            <span>Risk score {premium?.risk_score ?? '—'}</span>
+            <button onClick={load}><RefreshCw size={15}/></button>
+          </div>
+          <p style={{fontSize:10,color:'#475569',margin:'6px 0 0'}}>[Prototype Assumption] — not IRDAI-approved rates</p>
+        </div>
+
+        {/* Coverage card — locked if active policy exists */}
+        <div className="metric-card">
+          <div className="metric-label" style={{display:'flex',alignItems:'center',gap:6}}>
+            <IndianRupee size={17}/> COVERAGE
+            {activePolicy && <span style={{fontSize:10,background:'#dcfce7',color:'#16a34a',borderRadius:99,padding:'2px 8px',fontWeight:700}}>🔒 LOCKED</span>}
+          </div>
+
+          {activePolicy ? (
+            /* Locked state */
+            <>
+              <h3 style={{margin:'6px 0 4px',color:'#15803d'}}>
+                {activePolicy.tier_label} · {activePolicy.duration_days} days
+              </h3>
+              <p style={{margin:'2px 0',fontSize:13}}>
+                Accident: ₹{activePolicy.coverage?.accident?.toLocaleString('en-IN')}
+                &nbsp;|&nbsp; Weather: ₹{activePolicy.coverage?.weather?.toLocaleString('en-IN')}
+              </p>
+              <p style={{margin:'6px 0 0',fontSize:11,color:'#64748b'}}>
+                {activePolicy.days_remaining} days remaining · expires {activePolicy.end_date ? new Date(activePolicy.end_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+              </p>
+              <p style={{margin:'4px 0 0',fontSize:10,color:'#94a3b8'}}>
+                Plan locked until expiry — go to Wallet to top up
+              </p>
+            </>
+          ) : (
+            /* Unlocked — show tier/duration selectors */
+            <>
+              <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap'}}>
+                {TIERS.map(t => (
+                  <button key={t.key} onClick={()=>setTier(t.key)} style={{
+                    padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:700,
+                    cursor:'pointer', border:'1px solid',
+                    background: tier===t.key ? '#0f172a' : '#f1f5f9',
+                    color:      tier===t.key ? '#fff'    : '#64748b',
+                    borderColor: tier===t.key ? '#0f172a' : '#e2e8f0',
+                  }}>{t.label}</button>
+                ))}
+              </div>
+              <h3 style={{margin:'4px 0 2px'}}>
+                Accident: {selectedTierInfo.accident} &nbsp;|&nbsp; Weather: {selectedTierInfo.weather}
+              </h3>
+              <div style={{display:'flex',gap:6,marginTop:6}}>
+                {[7,30,90].map(d => (
+                  <button key={d} onClick={()=>setDuration(d)} style={{
+                    padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:600,
+                    cursor:'pointer', border:'1px solid',
+                    background: duration===d ? '#3b82f6' : '#f1f5f9',
+                    color:      duration===d ? '#fff'    : '#64748b',
+                    borderColor: duration===d ? '#3b82f6' : '#e2e8f0',
+                  }}>{d} days</button>
+                ))}
+              </div>
+              <span style={{fontSize:11,color:'#94a3b8',marginTop:6,display:'block'}}>
+                {premium?.explanation || 'Select tier and duration — activate in Wallet'}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Verification card */}
+        <div className="metric-card">
+          <div className="metric-label"><BrainCircuit size={17}/> VERIFICATION</div>
+          <h3>ML → Oracle → Claim Manager</h3>
+          <span>Blockchain settlement ready for testnet integration.</span>
+        </div>
+      </div>
+
+      <div className="split-grid">
+        {/* Earnings */}
+        <div className="panel">
+          <div className="eyebrow">EARNINGS</div>
+          <h2>Update today's work</h2>
+          <p className="muted" style={{fontSize:12,marginBottom:8}}>
+            Higher earnings = higher coverage premium (protects more income).
+          </p>
+          <form className="inline-form" onSubmit={save}>
+            <input type="number" min="0" placeholder="Income ₹" required
+              value={earn.income} onChange={e=>setEarn({...earn,income:e.target.value})}/>
+            <input type="number" min="0" step="0.1" placeholder="Hours" required
+              value={earn.hours_worked} onChange={e=>setEarn({...earn,hours_worked:e.target.value})}/>
+            <button className="primary-btn" disabled={busy}>{busy?'Saving...':'Save'}</button>
+          </form>
+          {msg && <div className="notice">{msg}</div>}
+        </div>
+
+        {/* Claims CTA */}
+        <div className="panel claim-cta">
+          <div className="metric-label"><FileWarning size={17}/> CLAIMS</div>
+          <h2>Something happened on the road?</h2>
+          <p className="muted">Submit the event and let the ML verification layer determine the next state.</p>
+          <Link className="primary-btn" to="/claims">Start a claim <ArrowUpRight size={17}/></Link>
+        </div>
+      </div>
+    </Shell>
+  );
 }
 
 // ── Evidence upload bar ───────────────────────────────────────────────────────
@@ -517,7 +680,458 @@ function Claims() {
   );
 }
 
-function Wallet() { const [connected,setConnected]=useState(false); return <Shell title="Payout wallet"><div className="content-narrow"><div className="panel wallet-panel"><div className="wallet-icon"><WalletCards/></div><h2>{connected?'Wallet connected':'Connect your wallet'}</h2><p className="muted">The wallet is the destination for automated testnet payouts after the claim contract approves settlement.</p>{connected?<div className="connected"><CheckCircle2/> 0xf39F...2266</div>:<button className="primary-btn submit" onClick={()=>setConnected(true)}>Connect demo wallet <ArrowRight size={17}/></button>}</div></div></Shell>; }
+function Wallet() {
+  const [balance, setBalance]             = useState(null);
+  const [transactions, setTxns]           = useState([]);
+  const [payoutMethod, setPayoutMethod]   = useState(null);
+  const [loading, setLoading]             = useState(true);
+  const [premiumAmt, setPremiumAmt]       = useState(null);
+  const [totalPremium, setTotalPremium]   = useState(null);
+  const [premiumDuration, setPremiumDuration] = useState(30);
+  const [premiumTier, setPremiumTier]     = useState('standard');
+  const [isFirstTopup, setIsFirstTopup]   = useState(false);
+  const [activePolicy, setActivePolicy]   = useState(null);  // locked policy from backend
+
+  // Plan selector state (first top-up only)
+  const [selectedTier, setSelectedTier]         = useState('standard');
+  const [selectedDuration, setSelectedDuration] = useState(30);
+
+  const PLAN_TIERS = [
+    { key:'basic',    label:'Basic',    accident:'₹2,500', weather:'₹500',    desc:'Essential coverage', color:'#64748b' },
+    { key:'standard', label:'Standard', accident:'₹5,000', weather:'₹1,000',  desc:'Recommended',        color:'#3b82f6' },
+    { key:'plus',     label:'Plus',     accident:'₹10,000',weather:'₹2,000',  desc:'Maximum protection', color:'#8b5cf6' },
+  ];
+
+  // payout method form
+  const [tab, setTab]                 = useState('upi');
+  const [upi, setUpi]                 = useState('');
+  const [bank, setBank]               = useState({ account:'', ifsc:'', name:'' });
+  const [saving, setSaving]           = useState(false);
+  const [saveMsg, setSaveMsg]         = useState('');
+
+  // withdraw
+  const [withdrawAmt, setWithdrawAmt] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawMsg, setWithdrawMsg] = useState({ text:'', ok:true });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [walletRes, premiumRes, activePolicyRes] = await Promise.allSettled([
+        api.get('/wallet/balance'),
+        api.get(`/premium/calculate?tier=${selectedTier}&duration_days=${selectedDuration}`),
+        api.get('/premium/active-policy'),
+      ]);
+
+      if (walletRes.status === 'fulfilled') {
+        setBalance(walletRes.value.data.balance);
+        setTxns(walletRes.value.data.transactions);
+        setPayoutMethod(walletRes.value.data.payout_method);
+        setIsFirstTopup(walletRes.value.data.is_first_topup ?? false);
+      }
+
+      if (premiumRes.status === 'fulfilled') {
+        const d = premiumRes.value.data;
+        const daily = d.premium ?? d.recommended_premium ?? null;
+        setPremiumAmt(daily ? parseFloat(daily).toFixed(2) : null);
+        setTotalPremium(d.total_premium ? parseFloat(d.total_premium).toFixed(2) : null);
+        setPremiumDuration(d.duration_days || selectedDuration);
+        setPremiumTier(d.tier || selectedTier);
+      }
+
+      if (activePolicyRes.status === 'fulfilled') {
+        const ap = activePolicyRes.value.data;
+        setActivePolicy(ap.has_active_policy ? ap.policy : null);
+        // Sync selectors to active policy so they show the locked values
+        if (ap.has_active_policy && ap.policy) {
+          setSelectedTier(ap.policy.tier);
+          setSelectedDuration(ap.policy.duration_days);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [selectedTier, selectedDuration]);
+
+  const saveMethod = async (e) => {
+    e.preventDefault(); setSaving(true); setSaveMsg('');
+    try {
+      const payload = tab === 'upi'
+        ? { upi_id: upi }
+        : { bank_account: bank.account, bank_ifsc: bank.ifsc, bank_name: bank.name };
+      const r = await api.put('/wallet/payout-method', payload);
+      setPayoutMethod(r.data.payout_method);
+      setSaveMsg('Saved successfully!');
+    } catch (e) {
+      setSaveMsg(e.response?.data?.detail || 'Failed to save.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const doWithdraw = async (e) => {
+    e.preventDefault();
+    setWithdrawing(true); setWithdrawMsg({ text:'', ok:true });
+    try {
+      // Use Razorpay payout endpoint
+      const r = await api.post('/razorpay/payout', {
+        amount_inr: parseFloat(withdrawAmt),
+        upi_id: upi || undefined,
+      });
+      setWithdrawMsg({ text: r.data.message, ok: true });
+      setWithdrawAmt('');
+      await load();
+    } catch (e) {
+      setWithdrawMsg({ text: e.response?.data?.detail || 'Withdrawal failed.', ok: false });
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
+  // Razorpay checkout popup for premium payment
+  const payPremium = async (amountInr, tier, durationDays) => {
+    try {
+      const order = await api.post('/razorpay/create-order', {
+        amount_inr:    amountInr,
+        description:   `ZenoGuard ${tier || 'Standard'} Plan — ${durationDays || 30} days`,
+        tier:          tier || selectedTier,
+        duration_days: durationDays || selectedDuration,
+      });
+      const { order_id, amount, currency, key_id, rider_name, rider_email } = order.data;
+
+      const options = {
+        key:         key_id,
+        amount:      amount,
+        currency:    currency,
+        name:        'ZenoGuard',
+        description: `${tier || selectedTier} plan · ${durationDays || selectedDuration} days`,
+        order_id:    order_id,
+        handler: async (response) => {
+          try {
+            const verify = await api.post('/razorpay/verify-payment', {
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature:  response.razorpay_signature,
+            });
+            alert(
+              `✅ ${verify.data.message}\n` +
+              `Payment ID: ${response.razorpay_payment_id}\n` +
+              `New balance: ₹${verify.data.new_balance?.toFixed(2) ?? '—'}`
+            );
+            await load();   // refresh balance, transactions, active policy
+          } catch (err) {
+            alert('Payment verification failed. Contact support.');
+          }
+        },
+        prefill:  { name: rider_name, email: rider_email },
+        theme:    { color: '#0f172a' },
+        modal:    { ondismiss: () => {} },
+      };
+
+      if (!window.Razorpay) {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          s.onload = resolve; s.onerror = reject;
+          document.body.appendChild(s);
+        });
+      }
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not initiate payment.');
+    }
+  };
+
+  const fmtAmt = (n) => `${n >= 0 ? '+' : ''}₹${Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+  const txColor = (t) => t.amount >= 0 ? '#16a34a' : '#dc2626';
+  const txBg    = (t) => t.amount >= 0 ? '#f0fdf4' : '#fef2f2';
+
+  return (
+    <Shell title="Payout wallet">
+      <div style={{ display:'flex', flexDirection:'column', gap:20, maxWidth:720 }}>
+
+        {/* ── Balance card ── */}
+        <div style={{ background:'#0f172a', borderRadius:16, padding:'28px 28px 24px', color:'#fff' }}>
+
+          {/* Top row: balance + top-up button side by side */}
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+            <div>
+              <p style={{ margin:0, fontSize:11, fontWeight:700, letterSpacing:2, color:'#94a3b8', textTransform:'uppercase' }}>Available balance</p>
+              {loading
+                ? <p style={{ margin:'12px 0 0', fontSize:36, fontWeight:800 }}>Loading…</p>
+                : <p style={{ margin:'8px 0 0', fontSize:42, fontWeight:800, letterSpacing:-1 }}>
+                    ₹{(balance || 0).toLocaleString('en-IN', { minimumFractionDigits:2 })}
+                  </p>
+              }
+              <p style={{ margin:'6px 0 0', fontSize:12, color:'#64748b' }}>
+                {payoutMethod ? `Linked: ${payoutMethod}` : 'No payout method linked yet'}
+              </p>
+            </div>
+
+            {/* Top-up button */}
+            {!isFirstTopup && (
+              <button
+                onClick={() => payPremium(parseFloat(totalPremium || premiumAmt || 50))}
+                disabled={loading}
+                style={{
+                  padding:'12px 20px', borderRadius:12, border:'2px solid #3b82f6',
+                  background:'#3b82f6', color:'#fff',
+                  fontSize:13, fontWeight:700, cursor: loading ? 'not-allowed' : 'pointer',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+                  opacity: loading ? 0.6 : 1, minWidth:140,
+                }}
+              >
+                <span style={{ fontSize:18 }}>➕ Top Up</span>
+                {totalPremium
+                  ? <span style={{ fontSize:11, opacity:0.85 }}>₹{totalPremium} · {premiumDuration} days</span>
+                  : <span style={{ fontSize:11, opacity:0.7 }}>calculating…</span>
+                }
+              </button>
+            )}
+          </div>
+
+          {premiumAmt && totalPremium && !isFirstTopup && (
+            <p style={{ margin:'10px 0 0', fontSize:11, color:'#475569' }}>
+              ₹{premiumAmt}/day · {premiumTier.charAt(0).toUpperCase()+premiumTier.slice(1)} plan · {premiumDuration} days
+              &nbsp;· <span style={{color:'#94a3b8'}}>[Prototype Assumption]</span>
+            </p>
+          )}
+        </div>
+
+        {/* ── FIRST TOP-UP: Plan selector  OR  Active policy status ── */}
+        {activePolicy ? (
+          /* ── Active locked policy card ── */
+          <div style={{ background:'#f0fdf4', borderRadius:16, border:'2px solid #bbf7d0', padding:24 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+              <span style={{ fontSize:18 }}>🔒</span>
+              <div className="eyebrow" style={{ color:'#16a34a' }}>ACTIVE POLICY — LOCKED</div>
+            </div>
+            <h2 style={{ marginTop:0, marginBottom:8, color:'#15803d' }}>
+              {activePolicy.tier_label} Plan · {activePolicy.duration_days} days
+            </h2>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:14 }}>
+              {[
+                { label:'Accident cover',  value:`₹${activePolicy.coverage?.accident?.toLocaleString('en-IN')}` },
+                { label:'Weather cover',   value:`₹${activePolicy.coverage?.weather?.toLocaleString('en-IN')}` },
+                { label:'Days remaining',  value: activePolicy.days_remaining != null ? `${activePolicy.days_remaining} days` : '—' },
+              ].map((item, i) => (
+                <div key={i} style={{ background:'#fff', borderRadius:10, padding:'10px 12px', border:'1px solid #dcfce7' }}>
+                  <p style={{ margin:0, fontSize:10, color:'#64748b', textTransform:'uppercase', letterSpacing:1 }}>{item.label}</p>
+                  <p style={{ margin:'4px 0 0', fontSize:16, fontWeight:800, color:'#15803d' }}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin:0, fontSize:11, color:'#64748b' }}>
+              ₹{activePolicy.premium?.toFixed(2)}/day · Active until {activePolicy.end_date ? new Date(activePolicy.end_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+              &nbsp;· <span style={{color:'#94a3b8'}}>[Prototype Assumption]</span>
+            </p>
+            <p style={{ margin:'6px 0 0', fontSize:11, color:'#94a3b8' }}>
+              🔒 Plan is locked for the policy period. You can renew or upgrade when it expires.
+            </p>
+          </div>
+        ) : isFirstTopup ? (
+          /* ── First top-up: Plan selector ── */
+          <div style={{ background:'#fff', borderRadius:16, border:'1px solid #e2e8f0', padding:24 }}>
+            <div className="eyebrow">ACTIVATE COVERAGE</div>
+            <h2 style={{ marginTop:4, marginBottom:4 }}>Choose your plan</h2>
+            <p className="muted" style={{ marginBottom:16, fontSize:13 }}>
+              Select a plan and duration to activate your insurance. You pay for the full period upfront.
+            </p>
+
+            {/* Tier cards */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+              {PLAN_TIERS.map(t => (
+                <div key={t.key} onClick={() => setSelectedTier(t.key)}
+                  style={{
+                    padding:'14px 12px', borderRadius:12, cursor:'pointer', textAlign:'center',
+                    border: `2px solid ${selectedTier===t.key ? t.color : '#e2e8f0'}`,
+                    background: selectedTier===t.key ? `${t.color}10` : '#f8fafc',
+                    transition:'all .15s',
+                  }}
+                >
+                  <p style={{ margin:0, fontSize:13, fontWeight:800, color: selectedTier===t.key ? t.color : '#374151' }}>{t.label}</p>
+                  <p style={{ margin:'4px 0 0', fontSize:10, color:'#64748b' }}>{t.desc}</p>
+                  <p style={{ margin:'6px 0 0', fontSize:11, fontWeight:600, color:'#374151' }}>🚗 {t.accident}</p>
+                  <p style={{ margin:'2px 0 0', fontSize:11, color:'#64748b' }}>🌧 {t.weather}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Duration buttons */}
+            <p style={{ margin:'0 0 8px', fontSize:12, fontWeight:600, color:'#64748b' }}>Coverage duration</p>
+            <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+              {[
+                { days:7,  label:'7 days',  note:'Short-term' },
+                { days:30, label:'30 days', note:'Recommended' },
+                { days:90, label:'90 days', note:'Best value' },
+              ].map(d => (
+                <button key={d.days} onClick={() => setSelectedDuration(d.days)} style={{
+                  flex:1, padding:'10px 8px', borderRadius:10, cursor:'pointer',
+                  border: `2px solid ${selectedDuration===d.days ? '#3b82f6' : '#e2e8f0'}`,
+                  background: selectedDuration===d.days ? '#eff6ff' : '#f8fafc',
+                  color: selectedDuration===d.days ? '#3b82f6' : '#64748b',
+                  fontWeight:700, fontSize:12,
+                }}>
+                  {d.label}
+                  <span style={{ display:'block', fontSize:10, fontWeight:400, opacity:0.7 }}>{d.note}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Summary + pay button */}
+            <div style={{
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+              padding:'14px 16px', borderRadius:12, background:'#f1f5f9', flexWrap:'wrap', gap:10,
+            }}>
+              <div>
+                <p style={{ margin:0, fontSize:13, fontWeight:700, color:'#1e293b' }}>
+                  {PLAN_TIERS.find(t=>t.key===selectedTier)?.label} · {selectedDuration} days
+                </p>
+                <p style={{ margin:'2px 0 0', fontSize:12, color:'#64748b' }}>
+                  {loading ? 'Calculating…' : `₹${premiumAmt}/day · Total ₹${totalPremium}`}
+                </p>
+                <p style={{ margin:'2px 0 0', fontSize:10, color:'#94a3b8' }}>[Prototype Assumption]</p>
+              </div>
+              <button
+                onClick={() => payPremium(parseFloat(totalPremium || premiumAmt || 50), selectedTier, selectedDuration)}
+                disabled={loading || !totalPremium}
+                style={{
+                  padding:'12px 24px', borderRadius:10, border:'none',
+                  background: loading ? '#94a3b8' : '#0f172a',
+                  color:'#fff', fontSize:13, fontWeight:700,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loading ? 'Loading…' : `Pay ₹${totalPremium || '…'} & Activate`}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+
+          {/* ── Payout method ── */}
+          <div className="panel" style={{ gridColumn: '1 / 2' }}>
+            <div className="eyebrow">PAYOUT METHOD</div>
+            <h2 style={{ marginTop:4 }}>Link your account</h2>
+            <p className="muted" style={{ marginBottom:12 }}>Claim payouts will be transferred here automatically.</p>
+
+            {/* tab switcher */}
+            <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+              {['upi','bank'].map(t => (
+                <button key={t} onClick={() => setTab(t)} style={{
+                  padding:'6px 18px', borderRadius:99, border:'1px solid',
+                  borderColor: tab===t ? '#0f172a' : '#e2e8f0',
+                  background: tab===t ? '#0f172a' : '#fff',
+                  color: tab===t ? '#fff' : '#64748b',
+                  fontSize:12, fontWeight:600, cursor:'pointer',
+                }}>
+                  {t === 'upi' ? '📱 UPI' : '🏦 Bank'}
+                </button>
+              ))}
+            </div>
+
+            <form className="form-stack" onSubmit={saveMethod}>
+              {tab === 'upi' ? (
+                <label>UPI ID
+                  <input placeholder="yourname@upi" value={upi} onChange={e=>setUpi(e.target.value)} required />
+                </label>
+              ) : (
+                <>
+                  <label>Bank name<input placeholder="SBI / HDFC / ICICI…" value={bank.name} onChange={e=>setBank({...bank,name:e.target.value})} required /></label>
+                  <label>Account number<input placeholder="Account number" value={bank.account} onChange={e=>setBank({...bank,account:e.target.value})} required /></label>
+                  <label>IFSC code<input placeholder="SBIN0001234" value={bank.ifsc} onChange={e=>setBank({...bank,ifsc:e.target.value})} required /></label>
+                </>
+              )}
+              <button className="primary-btn submit" disabled={saving}>
+                {saving ? 'Saving…' : 'Save method'} <ArrowRight size={15}/>
+              </button>
+              {saveMsg && <p style={{ margin:0, fontSize:12, color: saveMsg.includes('success') ? '#16a34a' : '#dc2626' }}>{saveMsg}</p>}
+            </form>
+          </div>
+
+          {/* ── Withdraw ── */}
+          <div className="panel" style={{ gridColumn: '2 / 3' }}>
+            <div className="eyebrow">WITHDRAW FUNDS</div>
+            <h2 style={{ marginTop:4 }}>Transfer to {tab === 'upi' ? 'UPI' : 'bank'}</h2>
+            <p className="muted" style={{ marginBottom:12 }}>Withdraw your claim balance to your linked account.</p>
+
+            <form className="form-stack" onSubmit={doWithdraw}>
+              <label>Amount (₹)
+                <input type="number" min="1" step="0.01" placeholder="Enter amount"
+                  value={withdrawAmt} onChange={e=>setWithdrawAmt(e.target.value)} required />
+              </label>
+              {payoutMethod && (
+                <p style={{ margin:'-4px 0 4px', fontSize:11, color:'#64748b' }}>
+                  To: <strong>{payoutMethod}</strong>
+                </p>
+              )}
+              <button className="primary-btn submit" disabled={withdrawing || !payoutMethod || !balance}>
+                {withdrawing ? 'Processing…' : 'Withdraw'} <ArrowRight size={15}/>
+              </button>
+              {!payoutMethod && <p style={{ margin:0, fontSize:11, color:'#f59e0b' }}>⚠ Save a payout method first</p>}
+              {withdrawMsg.text && (
+                <p style={{ margin:0, fontSize:12, color: withdrawMsg.ok ? '#16a34a' : '#dc2626' }}>
+                  {withdrawMsg.text}
+                </p>
+              )}
+            </form>
+
+            <div style={{ marginTop:16, padding:'10px 12px', borderRadius:10, background:'#f8fafc', border:'1px solid #e2e8f0' }}>
+              <p style={{ margin:0, fontSize:11, color:'#64748b', lineHeight:1.6 }}>
+                💡 Claim payouts are credited instantly to your ZenoGuard balance.<br/>
+                Transfers to UPI/bank take 1–2 business days.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Transaction history ── */}
+        <div className="panel">
+          <div className="eyebrow">TRANSACTION HISTORY</div>
+          <h2 style={{ marginTop:4, marginBottom:14 }}>Recent activity</h2>
+
+          {loading
+            ? <p className="muted">Loading…</p>
+            : transactions.length === 0
+              ? <div className="empty-state"><WalletCards/><p>No transactions yet. Submit a claim to receive your first payout.</p></div>
+              : <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {transactions.map(t => (
+                    <div key={t.id} style={{
+                      display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+                      borderRadius:10, background: txBg(t), border:`1px solid ${t.amount>=0?'#bbf7d0':'#fecaca'}`,
+                    }}>
+                      <div style={{ fontSize:20, width:32, textAlign:'center' }}>
+                        {t.transaction_type === 'claim_payout' ? '💰' : t.transaction_type === 'withdrawal' ? '🏦' : t.transaction_type === 'premium_payment' ? '🛡️' : t.transaction_type === 'top_up' ? '💳' : '↩️'}
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <p style={{ margin:0, fontSize:13, fontWeight:600, color:'#1e293b' }}>{t.description || t.transaction_type}</p>
+                        <p style={{ margin:0, fontSize:11, color:'#94a3b8' }}>{fmtDate(t.timestamp)} · {t.reference_id}</p>
+                      </div>
+                      <div style={{ textAlign:'right', flexShrink:0 }}>
+                        <p style={{ margin:0, fontSize:14, fontWeight:700, color: txColor(t) }}>{fmtAmt(t.amount)}</p>
+                        <span style={{
+                          fontSize:10, fontWeight:600, padding:'2px 7px', borderRadius:99,
+                          background: t.status==='completed'?'#dcfce7': t.status==='pending'?'#fef9c3':'#fee2e2',
+                          color: t.status==='completed'?'#16a34a': t.status==='pending'?'#d97706':'#dc2626',
+                        }}>{t.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+          }
+        </div>
+
+      </div>
+    </Shell>
+  );
+}
 
 function SimplePage({title,label,children}) { return <Shell title={title}><div className="content-narrow"><div className="panel"><div className="eyebrow">{label}</div>{children}</div></div></Shell>; }
 

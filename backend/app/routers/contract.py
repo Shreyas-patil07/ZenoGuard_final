@@ -1,7 +1,7 @@
 import os
+import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from web3 import Web3
 
 from ..database import get_db
 from ..models import Claim, Payout
@@ -9,54 +9,39 @@ from ..routers.auth import get_current_user
 
 router = APIRouter(prefix="/contract", tags=["contract"])
 
-RPC_URL = os.getenv("WEB3_RPC_URL", "https://ethereum-sepolia.publicnode.com")
-CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS", "0x0000000000000000000000000000000000000000")
-PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
-CONTRACT_ABI = [
-    {
-        "constant": False,
-        "inputs": [{"name": "recipient", "type": "address"}],
-        "name": "payout",
-        "outputs": [],
-        "payable": False,
-        "stateMutability": "nonpayable",
-        "type": "function",
-    }
-]
-
-
-def _build_transaction_hash(claim_id: int, recipient: str) -> str:
-    if not PRIVATE_KEY or CONTRACT_ADDRESS == "0x0000000000000000000000000000000000000000":
-        return f"mock_tx_claim_{claim_id}_{recipient[:8]}"
-
-    w3 = Web3(Web3.HTTPProvider(RPC_URL))
-    if not w3.is_connected():
-        raise RuntimeError("Unable to connect to Ethereum RPC")
-
-    account = w3.eth.account.from_key(PRIVATE_KEY)
-    contract = w3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), abi=CONTRACT_ABI)
-    tx = contract.functions.payout(Web3.to_checksum_address(recipient)).build_transaction({
-        "from": account.address,
-        "nonce": w3.eth.get_transaction_count(account.address),
-        "gas": 200000,
-        "gasPrice": w3.eth.gas_price,
-    })
-    signed_tx = account.sign_transaction(tx)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-    return Web3.to_hex(tx_hash)
-
 
 def create_payout_for_claim(db: Session, claim: Claim, current_user) -> Payout:
-    recipient = current_user.wallet_address or "0x0000000000000000000000000000000000000001"
-    tx_hash = _build_transaction_hash(claim.id, recipient)
+    """
+    Option 3 — Internal wallet payout.
+    Payout amount is based on the rider's coverage tier and event type.
+    Per spec Section 5 — [Prototype Assumption].
+    """
+    from ..routers.wallet import credit_wallet
+    from ..services.risk_engine import get_payout_amount
 
-    # Payout amount: fixed coverage of ₹5000 for all verified claims
-    COVERAGE_AMOUNT = 5000.0
+    # Get tier from the policy linked to this claim
+    tier = "standard"
+    if claim.policy:
+        tier = claim.policy.tier or "standard"
+
+    payout_amount = get_payout_amount(claim.event_type, tier)
+
+    txn = credit_wallet(
+        db=db,
+        rider=current_user,
+        amount=payout_amount,
+        description=(
+            f"Claim #{claim.id} payout — {claim.event_type.title()} at {claim.location} "
+            f"({tier.title()} tier) [Prototype]"
+        ),
+        reference_id=str(claim.id),
+    )
 
     payout = Payout(
         claim_id=claim.id,
-        amount=COVERAGE_AMOUNT,
-        tx_hash=tx_hash,
+        amount=payout_amount,
+        tx_hash=f"internal_wallet_txn_{txn.id}",
+        timestamp=datetime.datetime.utcnow(),
     )
     db.add(payout)
     db.commit()
@@ -73,10 +58,8 @@ def trigger_payout(
     claim = db.query(Claim).filter(Claim.id == claim_id).first()
     if not claim:
         raise HTTPException(status_code=404, detail="Claim not found")
-
     if claim.verification_status != "verified":
         raise HTTPException(status_code=400, detail="Claim is not verified")
-
     if claim.policy and claim.policy.rider_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to payout this claim")
 
@@ -86,8 +69,9 @@ def trigger_payout(
         raise HTTPException(status_code=500, detail=f"Payout failed: {str(exc)}") from exc
 
     return {
-        "message": "Payout submitted",
+        "message": "Payout credited to your ZenoGuard wallet.",
         "claim_id": claim.id,
-        "tx_hash": payout.tx_hash,
+        "amount": payout.amount,
+        "new_balance": current_user.wallet_balance,
         "payout_id": payout.id,
     }
