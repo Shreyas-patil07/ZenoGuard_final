@@ -18,11 +18,14 @@ class Rider(Base):
     bank_account = Column(String, nullable=True)
     bank_ifsc = Column(String, nullable=True)
     bank_name = Column(String, nullable=True)
+    razorpay_contact_id = Column(String, nullable=True, unique=True)
+    razorpay_fund_account_id = Column(String, nullable=True, unique=True)
 
     policies = relationship("Policy", back_populates="rider")
     earnings = relationship("EarningsLog", back_populates="rider")
     wallet_transactions = relationship("WalletTransaction", back_populates="rider")
     work_sessions = relationship("WorkSession", back_populates="rider")
+    payments = relationship("Payment", back_populates="rider")
 
 
 class WalletTransaction(Base):
@@ -59,6 +62,29 @@ class Policy(Base):
 
     rider = relationship("Rider", back_populates="policies")
     claims = relationship("Claim", back_populates="policy")
+    payments = relationship("Payment", back_populates="policy")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rider_id = Column(Integer, ForeignKey("riders.id"), nullable=False)
+    policy_id = Column(Integer, ForeignKey("policies.id"), nullable=True)
+    payment_type = Column(String, nullable=False)
+    amount_inr = Column(Float, nullable=False)
+    status = Column(String, default="CREATED", nullable=False)
+    razorpay_order_id = Column(String, nullable=True, unique=True)
+    razorpay_payment_id = Column(String, nullable=True, unique=True)
+    razorpay_payout_id = Column(String, nullable=True, unique=True)
+    upi_id = Column(String, nullable=True)
+    webhook_event_id = Column(String, nullable=True, unique=True)
+    failure_reason = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+    rider = relationship("Rider", back_populates="payments")
+    policy = relationship("Policy", back_populates="payments")
 
 
 class EarningsLog(Base):
@@ -69,7 +95,7 @@ class EarningsLog(Base):
     date = Column(DateTime, default=datetime.datetime.utcnow)
     income = Column(Float)
     hours_worked = Column(Float)
-    rider = relationship("Rider", back_populates="earnings")
+    rider = relationship("EarningsLog", back_populates="rider")
 
 
 class WorkSession(Base):
