@@ -20,14 +20,6 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
     uint64 public constant DURATION_30_DAYS = 30 days;
     uint64 public constant DURATION_90_DAYS = 90 days;
 
-    uint256 private constant BPS_DENOMINATOR = 10_000;
-    uint256 private constant DISCOUNT_MULTIPLIER_BPS = 8_000;
-    uint256 private constant SURCHARGE_MULTIPLIER_BPS = 11_000;
-
-    uint8 private constant SCORE_NORMAL_MIN = 75;
-    uint8 private constant SCORE_DISCOUNT_MIN = 90;
-    uint8 private constant SCORE_REVIEW_MIN = 60;
-
     DriverRegistry public immutable driverRegistry;
     SafetyScoreOracle public immutable safetyScoreOracle;
     InsurancePool public immutable insurancePool;
@@ -50,11 +42,11 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
     }
 
     function purchasePolicy(
-        uint256 basePremium,
+        uint256 premium,
         uint256 coverageAmount,
         uint64 durationSeconds
     ) external payable whenNotPaused nonReentrant returns (uint256 policyId) {
-        if (basePremium == 0) revert ZeroAmount();
+        if (premium == 0) revert ZeroAmount();
         if (coverageAmount == 0) revert ZeroAmount();
         _validateDuration(durationSeconds);
 
@@ -65,10 +57,7 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
             revert PolicyAlreadyActive(msg.sender);
         }
 
-        uint8 score = safetyScoreOracle.latestScore(msg.sender);
-        (uint256 finalPremium, bool underReview) = _calculatePremium(basePremium, score);
-
-        if (msg.value != finalPremium) revert IncorrectPremiumAmount(finalPremium, msg.value);
+        if (msg.value != premium) revert IncorrectPremiumAmount(premium, msg.value);
 
         policyId = _nextPolicyId++;
         uint64 startTime = uint64(block.timestamp);
@@ -77,47 +66,43 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
         _policies[policyId] = InsuranceTypes.Policy({
             id: policyId,
             driver: msg.sender,
-            premium: finalPremium,
+            premium: premium,
             coverage: coverageAmount,
             startTime: startTime,
             expiryTime: expiryTime,
             active: true,
-            underReview: underReview
+            underReview: false
         });
 
         driverRegistry.linkPolicy(msg.sender, policyId);
         insurancePool.deposit{value: msg.value}();
 
-        emit InsuranceEvents.PolicyPurchased(policyId, msg.sender, finalPremium, coverageAmount, expiryTime);
+        emit InsuranceEvents.PolicyPurchased(policyId, msg.sender, premium, coverageAmount, expiryTime);
     }
 
     function renewPolicy(
         uint256 policyId,
-        uint256 newBasePremium,
+        uint256 newPremium,
         uint64 durationSeconds
     ) external payable whenNotPaused nonReentrant {
         InsuranceTypes.Policy storage policy = _policies[policyId];
         if (policy.driver == address(0)) revert PolicyNotFound(policyId);
         if (policy.driver != msg.sender) revert NotPolicyOwner(msg.sender, policyId);
-        if (newBasePremium == 0) revert ZeroAmount();
+        if (newPremium == 0) revert ZeroAmount();
         _validateDuration(durationSeconds);
-
-        uint8 score = safetyScoreOracle.latestScore(msg.sender);
-        (uint256 finalPremium, bool underReview) = _calculatePremium(newBasePremium, score);
-
-        if (msg.value != finalPremium) revert IncorrectPremiumAmount(finalPremium, msg.value);
+        if (msg.value != newPremium) revert IncorrectPremiumAmount(newPremium, msg.value);
 
         uint64 startTime = uint64(block.timestamp);
         uint64 expiryTime = startTime + durationSeconds;
 
-        policy.premium = finalPremium;
+        policy.premium = newPremium;
         policy.startTime = startTime;
         policy.expiryTime = expiryTime;
         policy.active = true;
-        policy.underReview = underReview;
+        policy.underReview = false;
 
         insurancePool.deposit{value: msg.value}();
-        emit InsuranceEvents.PolicyRenewed(policyId, finalPremium, expiryTime);
+        emit InsuranceEvents.PolicyRenewed(policyId, newPremium, expiryTime);
     }
 
     function cancelPolicy(uint256 policyId) external whenNotPaused {
@@ -166,22 +151,6 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
             durationSeconds != DURATION_90_DAYS
         ) {
             revert InvalidDuration(durationSeconds);
-        }
-    }
-
-    function _calculatePremium(
-        uint256 basePremium,
-        uint8 score
-    ) internal pure returns (uint256 finalPremium, bool underReview) {
-        if (score >= SCORE_DISCOUNT_MIN) {
-            finalPremium = (basePremium * DISCOUNT_MULTIPLIER_BPS) / BPS_DENOMINATOR;
-        } else if (score >= SCORE_NORMAL_MIN) {
-            finalPremium = basePremium;
-        } else if (score >= SCORE_REVIEW_MIN) {
-            finalPremium = (basePremium * SURCHARGE_MULTIPLIER_BPS) / BPS_DENOMINATOR;
-        } else {
-            finalPremium = basePremium;
-            underReview = true;
         }
     }
 
