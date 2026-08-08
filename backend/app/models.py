@@ -139,5 +139,6 @@ class Payout(Base):
     claim_id = Column(Integer, ForeignKey("claims.id"))
     amount = Column(Float)
     tx_hash = Column(String, nullable=True)
+    status = Column(String, default="PENDING", nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     claim = relationship("Claim", back_populates="payout")
