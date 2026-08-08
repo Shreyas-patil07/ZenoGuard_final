@@ -96,7 +96,7 @@ class EarningsLog(Base):
     date = Column(DateTime, default=datetime.datetime.utcnow)
     income = Column(Float)
     hours_worked = Column(Float)
-    rider = relationship("EarningsLog", back_populates="rider")
+    rider = relationship("Rider", back_populates="earnings")
 
 
 class WorkSession(Base):
