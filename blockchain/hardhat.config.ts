@@ -26,6 +26,13 @@ export default defineConfig({
       chainType: "op"
     },
 
+    localhost: {
+      type: "http",
+      chainType: "l1",
+      url: "http://127.0.0.1:8545",
+      accounts: [configVariable("LOCAL_PRIVATE_KEY")]
+    },
+
     sepolia: {
       type: "http",
       chainType: "l1",
