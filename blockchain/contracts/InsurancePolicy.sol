@@ -46,38 +46,19 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
         uint256 coverageAmount,
         uint64 durationSeconds
     ) external payable whenNotPaused nonReentrant returns (uint256 policyId) {
-        if (premium == 0) revert ZeroAmount();
-        if (coverageAmount == 0) revert ZeroAmount();
-        _validateDuration(durationSeconds);
+        return _purchasePolicy(msg.sender, premium, coverageAmount, durationSeconds);
+    }
 
-        if (!driverRegistry.isRegistered(msg.sender)) revert DriverNotRegistered(msg.sender);
-
-        InsuranceTypes.Driver memory driver = driverRegistry.getDriver(msg.sender);
-        if (driver.policyId != 0 && _isActive(_policies[driver.policyId])) {
-            revert PolicyAlreadyActive(msg.sender);
+    function purchasePolicyFor(
+        address driver,
+        uint256 premium,
+        uint256 coverageAmount,
+        uint64 durationSeconds
+    ) external payable onlyRole(INSURANCE_COMPANY_ROLE) whenNotPaused nonReentrant returns (uint256 policyId) {
+        if (!driverRegistry.isRegistered(driver)) {
+            driverRegistry.registerDriverFor(driver, keccak256(abi.encodePacked("ZENOGUARD-RIDER", driver)));
         }
-
-        if (msg.value != premium) revert IncorrectPremiumAmount(premium, msg.value);
-
-        policyId = _nextPolicyId++;
-        uint64 startTime = uint64(block.timestamp);
-        uint64 expiryTime = startTime + durationSeconds;
-
-        _policies[policyId] = InsuranceTypes.Policy({
-            id: policyId,
-            driver: msg.sender,
-            premium: premium,
-            coverage: coverageAmount,
-            startTime: startTime,
-            expiryTime: expiryTime,
-            active: true,
-            underReview: false
-        });
-
-        driverRegistry.linkPolicy(msg.sender, policyId);
-        insurancePool.deposit{value: msg.value}();
-
-        emit InsuranceEvents.PolicyPurchased(policyId, msg.sender, premium, coverageAmount, expiryTime);
+        return _purchasePolicy(driver, premium, coverageAmount, durationSeconds);
     }
 
     function renewPolicy(
@@ -142,6 +123,45 @@ contract InsurancePolicy is AccessControl, Pausable, ReentrancyGuard {
     function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
         emit InsuranceEvents.EmergencyUnpaused(msg.sender);
+    }
+
+    function _purchasePolicy(
+        address driver,
+        uint256 premium,
+        uint256 coverageAmount,
+        uint64 durationSeconds
+    ) internal returns (uint256 policyId) {
+        if (premium == 0) revert ZeroAmount();
+        if (coverageAmount == 0) revert ZeroAmount();
+        _validateDuration(durationSeconds);
+        if (!driverRegistry.isRegistered(driver)) revert DriverNotRegistered(driver);
+
+        InsuranceTypes.Driver memory driverRecord = driverRegistry.getDriver(driver);
+        if (driverRecord.policyId != 0 && _isActive(_policies[driverRecord.policyId])) {
+            revert PolicyAlreadyActive(driver);
+        }
+
+        if (msg.value != premium) revert IncorrectPremiumAmount(premium, msg.value);
+
+        policyId = _nextPolicyId++;
+        uint64 startTime = uint64(block.timestamp);
+        uint64 expiryTime = startTime + durationSeconds;
+
+        _policies[policyId] = InsuranceTypes.Policy({
+            id: policyId,
+            driver: driver,
+            premium: premium,
+            coverage: coverageAmount,
+            startTime: startTime,
+            expiryTime: expiryTime,
+            active: true,
+            underReview: false
+        });
+
+        driverRegistry.linkPolicy(driver, policyId);
+        insurancePool.deposit{value: msg.value}();
+
+        emit InsuranceEvents.PolicyPurchased(policyId, driver, premium, coverageAmount, expiryTime);
     }
 
     function _validateDuration(uint64 durationSeconds) internal pure {
