@@ -55,7 +55,7 @@ describe("ZenoGuard insurance flow", function () {
     assert.equal(await driverRegistry.isRegistered(driver.address), true);
 
     await safetyScoreOracle.submitScore(driver.address, 90);
-    assert.equal(await safetyScoreOracle.latestScore(driver.address), 90);
+    assert.equal(await safetyScoreOracle.latestScore(driver.address), 90n);
 
     const basePremium = ethers.parseEther("0.1");
     const expectedPremium = ethers.parseEther("0.08");
