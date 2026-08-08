@@ -11,8 +11,7 @@ class Rider(Base):
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
     wallet_address = Column(String, unique=True, index=True, nullable=True)
-    kyc_status = Column(String, default="pending")  # pending, verified, rejected
-
+    kyc_status = Column(String, default="pending")
     wallet_balance = Column(Float, default=0.0)
     upi_id = Column(String, nullable=True)
     bank_account = Column(String, nullable=True)
@@ -22,6 +21,7 @@ class Rider(Base):
     policies = relationship("Policy", back_populates="rider")
     earnings = relationship("EarningsLog", back_populates="rider")
     wallet_transactions = relationship("WalletTransaction", back_populates="rider")
+    work_sessions = relationship("WorkSession", back_populates="rider")
 
 
 class WalletTransaction(Base):
@@ -35,7 +35,6 @@ class WalletTransaction(Base):
     status = Column(String, default="completed")
     reference_id = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-
     rider = relationship("Rider", back_populates="wallet_transactions")
 
 
@@ -52,7 +51,6 @@ class Policy(Base):
     duration_days = Column(Integer, default=30)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
-
     rider = relationship("Rider", back_populates="policies")
     claims = relationship("Claim", back_populates="policy")
 
@@ -65,8 +63,20 @@ class EarningsLog(Base):
     date = Column(DateTime, default=datetime.datetime.utcnow)
     income = Column(Float)
     hours_worked = Column(Float)
-
     rider = relationship("Rider", back_populates="earnings")
+
+
+class WorkSession(Base):
+    __tablename__ = "work_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rider_id = Column(Integer, ForeignKey("riders.id"), nullable=False)
+    started_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    ended_at = Column(DateTime, nullable=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    consent = Column(Boolean, default=False, nullable=False)
+    rider = relationship("Rider", back_populates="work_sessions")
 
 
 class Claim(Base):
@@ -79,7 +89,6 @@ class Claim(Base):
     location = Column(String)
     verification_status = Column(String, default="pending")
     screenshot_url = Column(String)
-
     policy = relationship("Policy", back_populates="claims")
     payout = relationship("Payout", back_populates="claim", uselist=False)
 
@@ -92,5 +101,4 @@ class Payout(Base):
     amount = Column(Float)
     tx_hash = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-
     claim = relationship("Claim", back_populates="payout")
