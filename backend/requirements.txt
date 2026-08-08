@@ -12,3 +12,5 @@ numpy
 scikit-learn
 joblib
 web3
+python-multipart
+Pillow
