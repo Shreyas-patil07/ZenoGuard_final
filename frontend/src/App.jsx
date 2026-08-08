@@ -11,6 +11,7 @@ import {
   BrainCircuit,
   CheckCircle2,
   Clock3,
+  CloudUpload,
   FileWarning,
   IndianRupee,
   LockKeyhole,
@@ -122,9 +123,99 @@ function Dashboard() {
 }
 
 function Claims() {
-  const [form,setForm]=useState({event_type:'accident',location:'',evidence_quality:'0.9'}); const [result,setResult]=useState(null); const [busy,setBusy]=useState(false);
-  const submit=async e=>{e.preventDefault();setBusy(true);setResult(null);try{const ml=await api.post('/ml/claim-check',{claim_type:form.event_type==='accident'?'Accident':'Weather',previous_claims:0,previous_fraud_flags:0,gps_consistency:.92,weather_match:form.event_type==='weather'?.9:.75,activity_consistency:.94,timestamp_consistency:.96,evidence_quality:Number(form.evidence_quality),claim_severity:.7,coverage_amount:5000});let claim=null;try{claim=(await api.post('/claims/submit',{event_type:form.event_type,location:form.location,screenshot_url:'frontend-demo'})).data}catch(err){claim={error:err.response?.data?.detail||'Claim record endpoint unavailable'}}setResult({ml:ml.data,claim})}catch(err){setResult({error:err.response?.data?.detail||'ML verification failed'})}finally{setBusy(false)}};
-  return <Shell title="Claim center"><div className="split-grid"><div className="panel"><div className="eyebrow">CLAIM INPUT</div><h2>Tell us what happened</h2><form className="form-stack" onSubmit={submit}><label>Event type<select value={form.event_type} onChange={e=>setForm({...form,event_type:e.target.value})}><option value="accident">Accident</option><option value="weather">Weather disruption</option></select></label><label>Location<input required placeholder="Mumbai, Andheri..." value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/></label><label>Evidence quality<select value={form.evidence_quality} onChange={e=>setForm({...form,evidence_quality:e.target.value})}><option value="0.95">Excellent</option><option value="0.9">Good</option><option value="0.65">Weak</option></select></label><button className="primary-btn submit" disabled={busy}>{busy?'Verifying...':'Submit & verify'} <ArrowRight size={17}/></button></form></div><div className="panel"><div className="eyebrow">VERIFICATION TIMELINE</div><h2>Claim state</h2>{!result?<div className="empty-state"><Clock3/><p>Submit a claim to see ML verification and settlement state.</p></div>:result.error?<div className="alert error">{result.error}</div>:<div className="timeline"><div className="timeline-item"><div className="timeline-dot"><BrainCircuit/></div><div><b>AI claim screening</b><span>Fraud probability: {(result.ml.fraud_probability*100).toFixed(1)}% · {result.ml.decision}</span></div></div><div className="timeline-item"><div className="timeline-dot"><CheckCircle2/></div><div><b>Backend claim record</b><span>{result.claim?.claim_id?`Claim #${result.claim.claim_id}`:'ML result received'} · {result.claim?.verification_status||'pending'}</span></div></div>{result.ml.decision==='VALID'&&<div className="tx-box"><BadgeCheck size={16}/> Claim is eligible for the blockchain verification step.</div>}</div>}</div></div></Shell>;
+  const [form,setForm]=useState({event_type:'accident',location:''});
+  const [result,setResult]=useState(null);
+  const [busy,setBusy]=useState(false);
+  const [evidenceFile,setEvidenceFile]=useState(null);
+  const [evidence,setEvidence]=useState(null);
+
+  const chooseFile=(e)=>{
+    const file=e.target.files?.[0]||null;
+    setEvidenceFile(file);
+    setEvidence(null);
+    setResult(null);
+  };
+
+  const submit=async e=>{
+    e.preventDefault();
+    if(!evidenceFile){setResult({error:'Please upload photo evidence before submitting the claim.'});return;}
+    setBusy(true);setResult(null);setEvidence(null);
+    try{
+      const body=new FormData();
+      body.append('file',evidenceFile);
+      const upload=(await api.post('/upload/evidence',body,{headers:{'Content-Type':'multipart/form-data'}})).data;
+      setEvidence(upload);
+
+      const evidenceQuality=upload.quality==='good'?0.95:0.65;
+      const ml=(await api.post('/ml/claim-check',{
+        claim_type:form.event_type==='accident'?'Accident':form.event_type==='breakdown'?'Breakdown':'Weather',
+        previous_claims:0,
+        previous_fraud_flags:0,
+        gps_consistency:.92,
+        weather_match:form.event_type==='weather'?.9:.75,
+        activity_consistency:.94,
+        timestamp_consistency:.96,
+        evidence_quality:evidenceQuality,
+        claim_severity:.7,
+        coverage_amount:5000
+      })).data;
+
+      let claim=null;
+      try{
+        claim=(await api.post('/claims/submit',{
+          event_type:form.event_type,
+          location:form.location.trim(),
+          screenshot_url:upload.cloudinary_url
+        })).data;
+      }catch(err){
+        claim={error:err.response?.data?.detail||'Claim record endpoint unavailable'};
+      }
+      setResult({ml,claim});
+    }catch(err){
+      setResult({error:err.response?.data?.detail||'Evidence upload or ML verification failed.'});
+    }finally{setBusy(false);}
+  };
+
+  return <Shell title="Claim center">
+    <div className="split-grid">
+      <div className="panel">
+        <div className="eyebrow">CLAIM INPUT</div>
+        <h2>Tell us what happened</h2>
+        <p className="muted">Upload clear evidence. ZenoGuard stores the image off-chain and uses it as claim evidence.</p>
+        <form className="form-stack" onSubmit={submit}>
+          <label>Event type
+            <select value={form.event_type} onChange={e=>setForm({...form,event_type:e.target.value})}>
+              <option value="accident">Accident</option>
+              <option value="breakdown">Vehicle breakdown</option>
+              <option value="weather">Weather disruption</option>
+            </select>
+          </label>
+          <label>Location
+            <input required placeholder="Mumbai, Andheri..." value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/>
+          </label>
+          <label>Photo evidence
+            <input required type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseFile}/>
+          </label>
+          {evidenceFile&&<div className="info-row"><CloudUpload size={18}/><span>{evidenceFile.name} · {(evidenceFile.size/1024/1024).toFixed(2)} MB</span></div>}
+          {evidence&&<div className="info-row"><CheckCircle2 size={18}/><span>Uploaded to Cloudinary · {evidence.quality === 'good' ? 'Quality good' : 'Needs review'}</span></div>}
+          <button className="primary-btn submit" disabled={busy}>{busy?'Uploading & verifying...':'Submit & verify'} <ArrowRight size={17}/></button>
+        </form>
+        {result?.error&&<div className="alert error">{result.error}</div>}
+      </div>
+
+      <div className="panel">
+        <div className="eyebrow">VERIFICATION TIMELINE</div>
+        <h2>Claim state</h2>
+        {!result?<div className="empty-state"><Clock3/><p>Submit a claim to see evidence quality, ML verification and settlement state.</p></div>:result.error?null:<div className="timeline">
+          {evidence&&<div className="timeline-item"><div className="timeline-dot"><CloudUpload/></div><div><b>Evidence stored</b><span>Cloudinary upload completed · {evidence.width}×{evidence.height}px · {evidence.quality}</span></div></div>}
+          <div className="timeline-item"><div className="timeline-dot"><BrainCircuit/></div><div><b>AI claim screening</b><span>Fraud probability: {((result.ml?.fraud_probability||0)*100).toFixed(1)}% · {result.ml?.decision||'—'}</span></div></div>
+          <div className="timeline-item"><div className="timeline-dot"><CheckCircle2/></div><div><b>Backend claim record</b><span>{result.claim?.claim_id?`Claim #${result.claim.claim_id}`:'Claim record pending'} · {result.claim?.verification_status||'pending'}</span></div></div>
+          {result.ml?.decision==='VALID'&&<div className="tx-box"><BadgeCheck size={16}/> Claim is eligible for the blockchain verification step.</div>}
+          {evidence?.cloudinary_url&&<a className="secondary-btn" href={evidence.cloudinary_url} target="_blank" rel="noreferrer">View uploaded evidence <ArrowUpRight size={16}/></a>}
+        </div>}
+      </div>
+    </div>
+  </Shell>;
 }
 
 function SimplePage({title,label,children}) { return <Shell title={title}><div className="content-narrow"><div className="panel"><div className="eyebrow">{label}</div>{children}</div></div></Shell>; }
