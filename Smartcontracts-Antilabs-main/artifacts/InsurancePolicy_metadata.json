@@ -1,0 +1,1222 @@
+{
+	"compiler": {
+		"version": "0.8.34+commit.80d5c536"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "admin",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "driverRegistry_",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "safetyScoreOracle_",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "insurancePool_",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "AccessControlBadConfirmation",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "neededRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "AccessControlUnauthorizedAccount",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					}
+				],
+				"name": "DriverNotRegistered",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "EnforcedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ExpectedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "required",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sent",
+						"type": "uint256"
+					}
+				],
+				"name": "IncorrectPremiumAmount",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "caller",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "NotPolicyOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "driver",
+						"type": "address"
+					}
+				],
+				"name": "PolicyAlreadyActive",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "PolicyNotFound",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ReentrancyGuardReentrantCall",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAddress",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAmount",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "pausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyPaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "unpausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyUnpaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Paused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "cancelledBy",
+						"type": "address"
+					}
+				],
+				"name": "PolicyCancelled",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "driver",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "premium",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "coverage",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint64",
+						"name": "expiryTime",
+						"type": "uint64"
+					}
+				],
+				"name": "PolicyPurchased",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newPremium",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint64",
+						"name": "newExpiryTime",
+						"type": "uint64"
+					}
+				],
+				"name": "PolicyRenewed",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "oldPremium",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newPremium",
+						"type": "uint256"
+					}
+				],
+				"name": "PremiumUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "previousAdminRole",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "newAdminRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "RoleAdminChanged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Unpaused",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "DEFAULT_ADMIN_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "INSURANCE_COMPANY_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "PAUSER_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "POLICY_DURATION",
+				"outputs": [
+					{
+						"internalType": "uint64",
+						"name": "",
+						"type": "uint64"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "cancelPolicy",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "driverRegistry",
+				"outputs": [
+					{
+						"internalType": "contract DriverRegistry",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "getPolicy",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "id",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "driver",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "premium",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "coverage",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint64",
+								"name": "startTime",
+								"type": "uint64"
+							},
+							{
+								"internalType": "uint64",
+								"name": "expiryTime",
+								"type": "uint64"
+							},
+							{
+								"internalType": "bool",
+								"name": "active",
+								"type": "bool"
+							},
+							{
+								"internalType": "bool",
+								"name": "underReview",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct InsuranceTypes.Policy",
+						"name": "policy",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					}
+				],
+				"name": "getRoleAdmin",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "grantRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "hasRole",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "insurancePool",
+				"outputs": [
+					{
+						"internalType": "contract InsurancePool",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "isPolicyActive",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "active",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "pause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "paused",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "basePremium",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "coverageAmount",
+						"type": "uint256"
+					}
+				],
+				"name": "purchasePolicy",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "newBasePremium",
+						"type": "uint256"
+					}
+				],
+				"name": "renewPolicy",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "callerConfirmation",
+						"type": "address"
+					}
+				],
+				"name": "renounceRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "revokeRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "safetyScoreOracle",
+				"outputs": [
+					{
+						"internalType": "contract SafetyScoreOracle",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes4",
+						"name": "interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "unpause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "newPremium",
+						"type": "uint256"
+					}
+				],
+				"name": "updatePremium",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "Senior Solidity Architect",
+			"details": "Off-chain actuarial pricing (the \"base premium\" for a given coverage      amount) is computed by the backend and passed in at purchase/renewal      time; this contract's only on-chain pricing responsibility is the      deterministic tier adjustment below:        Score 90-100  => 20% discount  (80% of base premium)        Score 75-89   => normal premium (100% of base premium)        Score 60-74   => 10% surcharge (110% of base premium)        Score 0-59    => normal premium, policy flagged `underReview`      Role model:      - DEFAULT_ADMIN_ROLE: grants/revokes roles below; multisig/timelock        in production.      - PAUSER_ROLE: may pause/unpause this contract in an emergency.      - INSURANCE_COMPANY_ROLE: may administratively update a policy's        premium and force-cancel policies (e.g. fraud response).      This contract must itself hold POLICY_MANAGER_ROLE on DriverRegistry      to call `linkPolicy`, granted post-deployment by the DriverRegistry      admin (see deploy.js).",
+			"errors": {
+				"AccessControlBadConfirmation()": [
+					{
+						"details": "The caller of a function is not the expected one. NOTE: Don't confuse with {AccessControlUnauthorizedAccount}."
+					}
+				],
+				"AccessControlUnauthorizedAccount(address,bytes32)": [
+					{
+						"details": "The `account` is missing a role."
+					}
+				],
+				"DriverNotRegistered(address)": [
+					{
+						"params": {
+							"wallet": "The unrecognized wallet address."
+						}
+					}
+				],
+				"EnforcedPause()": [
+					{
+						"details": "The operation failed because the contract is paused."
+					}
+				],
+				"ExpectedPause()": [
+					{
+						"details": "The operation failed because the contract is not paused."
+					}
+				],
+				"IncorrectPremiumAmount(uint256,uint256)": [
+					{
+						"params": {
+							"required": "The expected premium amount in wei.",
+							"sent": "The amount actually sent in wei."
+						}
+					}
+				],
+				"NotPolicyOwner(address,uint256)": [
+					{
+						"params": {
+							"caller": "The address that attempted the action.",
+							"policyId": "The policy ID they attempted to act on."
+						}
+					}
+				],
+				"PolicyAlreadyActive(address)": [
+					{
+						"params": {
+							"driver": "The driver wallet with an existing active policy."
+						}
+					}
+				],
+				"PolicyNotFound(uint256)": [
+					{
+						"params": {
+							"policyId": "The unrecognized policy ID."
+						}
+					}
+				],
+				"ReentrancyGuardReentrantCall()": [
+					{
+						"details": "Unauthorized reentrant call."
+					}
+				]
+			},
+			"events": {
+				"EmergencyPaused(address)": {
+					"params": {
+						"pausedBy": "The address that triggered the pause."
+					}
+				},
+				"EmergencyUnpaused(address)": {
+					"params": {
+						"unpausedBy": "The address that lifted the pause."
+					}
+				},
+				"Paused(address)": {
+					"details": "Emitted when the pause is triggered by `account`."
+				},
+				"PolicyCancelled(uint256,address)": {
+					"params": {
+						"cancelledBy": "The address that initiated the cancellation.",
+						"policyId": "The cancelled policy ID."
+					}
+				},
+				"PolicyPurchased(uint256,address,uint256,uint256,uint64)": {
+					"params": {
+						"coverage": "The maximum payout coverage, in wei.",
+						"driver": "The driver the policy belongs to.",
+						"expiryTime": "The unix timestamp the policy expires.",
+						"policyId": "The newly created policy ID.",
+						"premium": "The premium paid, in wei."
+					}
+				},
+				"PolicyRenewed(uint256,uint256,uint64)": {
+					"params": {
+						"newExpiryTime": "The new expiry timestamp.",
+						"newPremium": "The updated premium, in wei.",
+						"policyId": "The renewed policy ID."
+					}
+				},
+				"PremiumUpdated(uint256,uint256,uint256)": {
+					"params": {
+						"newPremium": "The new premium, in wei.",
+						"oldPremium": "The previous premium, in wei.",
+						"policyId": "The affected policy ID."
+					}
+				},
+				"RoleAdminChanged(bytes32,bytes32,bytes32)": {
+					"details": "Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole` `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite {RoleAdminChanged} not being emitted to signal this."
+				},
+				"RoleGranted(bytes32,address,address)": {
+					"details": "Emitted when `account` is granted `role`. `sender` is the account that originated the contract call. This account bears the admin role (for the granted role). Expected in cases where the role was granted using the internal {AccessControl-_grantRole}."
+				},
+				"RoleRevoked(bytes32,address,address)": {
+					"details": "Emitted when `account` is revoked `role`. `sender` is the account that originated the contract call:   - if using `revokeRole`, it is the admin role bearer   - if using `renounceRole`, it is the role bearer (i.e. `account`)"
+				},
+				"Unpaused(address)": {
+					"details": "Emitted when the pause is lifted by `account`."
+				}
+			},
+			"kind": "dev",
+			"methods": {
+				"cancelPolicy(uint256)": {
+					"details": "Callable by the policy's driver, or by an INSURANCE_COMPANY_ROLE      holder (e.g. fraud response / regulatory action). No premium      refund logic is applied — out of scope for this lean build.",
+					"params": {
+						"policyId": "The policy ID to cancel."
+					}
+				},
+				"constructor": {
+					"params": {
+						"admin": "The address to receive DEFAULT_ADMIN_ROLE and PAUSER_ROLE.",
+						"driverRegistry_": "Deployed DriverRegistry contract address.",
+						"insurancePool_": "Deployed InsurancePool contract address.",
+						"safetyScoreOracle_": "Deployed SafetyScoreOracle contract address."
+					}
+				},
+				"getPolicy(uint256)": {
+					"details": "Reverts with `PolicyNotFound` if `policyId` does not exist.",
+					"params": {
+						"policyId": "The policy ID to look up."
+					},
+					"returns": {
+						"policy": "The `InsuranceTypes.Policy` record."
+					}
+				},
+				"getRoleAdmin(bytes32)": {
+					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+				},
+				"grantRole(bytes32,address)": {
+					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
+				},
+				"hasRole(bytes32,address)": {
+					"details": "Returns `true` if `account` has been granted `role`."
+				},
+				"isPolicyActive(uint256)": {
+					"details": "Lazy-expiry check: a policy is active only if its `active` flag      is set AND the current block timestamp has not passed its      `expiryTime`. No state transition transaction is required for a      policy to be treated as expired.",
+					"params": {
+						"policyId": "The policy ID to check."
+					},
+					"returns": {
+						"active": "True if the policy is in force right now."
+					}
+				},
+				"paused()": {
+					"details": "Returns true if the contract is paused, and false otherwise."
+				},
+				"purchasePolicy(uint256,uint256)": {
+					"details": "`basePremium` is the off-chain-computed actuarial premium for      `coverageAmount`, supplied by the backend/frontend; this function      applies the deterministic score-tier adjustment on top of it and      requires exact payment of the resulting amount. Reverts if the      caller is not a registered driver, already holds an active      policy, or sends the wrong ETH amount. Forwards payment to      InsurancePool and links the new policy into DriverRegistry.",
+					"params": {
+						"basePremium": "The off-chain-computed base premium, in wei, before                     the safety-score adjustment.",
+						"coverageAmount": "The maximum payout coverage for this policy, in wei."
+					},
+					"returns": {
+						"policyId": "The newly created policy ID."
+					}
+				},
+				"renewPolicy(uint256,uint256)": {
+					"details": "Only the policy's driver may renew it. Re-applies the current      safety-score tier to the newly supplied base premium. Resets      `startTime`/`expiryTime` to a fresh 365-day term and reactivates      the policy (including clearing a prior `underReview` flag if the      score has since improved).",
+					"params": {
+						"newBasePremium": "The off-chain-computed base premium for the                        renewal term, in wei, before score adjustment.",
+						"policyId": "The policy ID to renew."
+					}
+				},
+				"renounceRole(bytes32,address)": {
+					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `callerConfirmation`. May emit a {RoleRevoked} event."
+				},
+				"revokeRole(bytes32,address)": {
+					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
+				},
+				"supportsInterface(bytes4)": {
+					"details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+				},
+				"updatePremium(uint256,uint256)": {
+					"details": "Restricted to INSURANCE_COMPANY_ROLE. This is a bookkeeping      override (e.g. correcting a pricing error) and does NOT collect      or refund any ETH — it only updates the recorded premium amount.",
+					"params": {
+						"newPremium": "The corrected premium amount, in wei.",
+						"policyId": "The policy ID to update."
+					}
+				}
+			},
+			"stateVariables": {
+				"_nextPolicyId": {
+					"details": "Starts at 1 so that 0 can safely mean \"no policy\" throughout the protocol."
+				}
+			},
+			"title": "InsurancePolicy",
+			"version": 1
+		},
+		"userdoc": {
+			"errors": {
+				"DriverNotRegistered(address)": [
+					{
+						"notice": "Thrown when referencing a wallet that has not registered as a driver."
+					}
+				],
+				"IncorrectPremiumAmount(uint256,uint256)": [
+					{
+						"notice": "Thrown when the value sent does not match the required premium amount."
+					}
+				],
+				"NotPolicyOwner(address,uint256)": [
+					{
+						"notice": "Thrown when a caller other than the policy's driver attempts a driver-only action."
+					}
+				],
+				"PolicyAlreadyActive(address)": [
+					{
+						"notice": "Thrown when a driver already holds an active policy and tries to purchase another."
+					}
+				],
+				"PolicyNotFound(uint256)": [
+					{
+						"notice": "Thrown when referencing a policy ID that does not exist."
+					}
+				],
+				"ZeroAddress()": [
+					{
+						"notice": "Thrown when a zero address is passed where a non-zero address is required."
+					}
+				],
+				"ZeroAmount()": [
+					{
+						"notice": "Thrown when a numeric argument is zero but must be non-zero."
+					}
+				]
+			},
+			"events": {
+				"EmergencyPaused(address)": {
+					"notice": "Emitted when a contract is paused in response to an emergency."
+				},
+				"EmergencyUnpaused(address)": {
+					"notice": "Emitted when a contract is unpaused, resuming normal operations."
+				},
+				"PolicyCancelled(uint256,address)": {
+					"notice": "Emitted when a policy is cancelled by the driver or the insurer."
+				},
+				"PolicyPurchased(uint256,address,uint256,uint256,uint64)": {
+					"notice": "Emitted when a driver purchases a new insurance policy."
+				},
+				"PolicyRenewed(uint256,uint256,uint64)": {
+					"notice": "Emitted when a policy is renewed."
+				},
+				"PremiumUpdated(uint256,uint256,uint256)": {
+					"notice": "Emitted whenever a policy's premium amount is recalculated or updated."
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"INSURANCE_COMPANY_ROLE()": {
+					"notice": "Allowed to administratively update premiums and force-cancel policies."
+				},
+				"PAUSER_ROLE()": {
+					"notice": "Allowed to pause/unpause this contract in an emergency."
+				},
+				"POLICY_DURATION()": {
+					"notice": "Fixed policy term applied on every purchase/renewal."
+				},
+				"cancelPolicy(uint256)": {
+					"notice": "Cancels a policy, immediately ending coverage."
+				},
+				"driverRegistry()": {
+					"notice": "The DriverRegistry this contract links purchased policies into."
+				},
+				"getPolicy(uint256)": {
+					"notice": "Returns the full on-chain record for a policy."
+				},
+				"insurancePool()": {
+					"notice": "The InsurancePool that receives forwarded premium payments."
+				},
+				"isPolicyActive(uint256)": {
+					"notice": "Returns whether a policy is currently active."
+				},
+				"pause()": {
+					"notice": "Pauses purchase, renewal, cancellation, and premium updates."
+				},
+				"purchasePolicy(uint256,uint256)": {
+					"notice": "Purchases a new insurance policy for the caller."
+				},
+				"renewPolicy(uint256,uint256)": {
+					"notice": "Renews an existing policy for another full term."
+				},
+				"safetyScoreOracle()": {
+					"notice": "The SafetyScoreOracle this contract reads verified scores from."
+				},
+				"unpause()": {
+					"notice": "Resumes normal operation after a pause."
+				},
+				"updatePremium(uint256,uint256)": {
+					"notice": "Administratively overrides a policy's stored premium value."
+				}
+			},
+			"notice": "Manages the insurance policy lifecycle (purchase, renew, cancel,         premium updates) and applies the deterministic safety-score-based         premium adjustment. Reads verified scores from SafetyScoreOracle         and links purchased policies into DriverRegistry — it performs NO         AI computation itself; scoring is entirely off-chain, this         contract only applies a fixed, auditable pricing formula to a         verified score.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/InsurancePolicy.sol": "InsurancePolicy"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts/access/AccessControl.sol": {
+			"keccak256": "0x4686ec784d75f95beaf2bf5b5f26e5f946d4c864aaee9c3c62bdc18381f5e017",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://26710ca191913f3c9df542079c4a6dcff02968e92d4f7357daefef9fbe72a19c",
+				"dweb:/ipfs/QmanHbeWuBbVEqXySHa1zhm2rExjYpChDBubBaJNTCa2JB"
+			]
+		},
+		"@openzeppelin/contracts/access/IAccessControl.sol": {
+			"keccak256": "0xbff9f59c84e5337689161ce7641c0ef8e872d6a7536fbc1f5133f128887aba3c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b308f882e796f7b79c9502deacb0a62983035c6f6f4e962b319ba6a1f4a77d3d",
+				"dweb:/ipfs/QmaWCW7ahEQqFjwhSUhV7Ae7WhfNvzSpE7DQ58hvEooqPL"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+				"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+			]
+		},
+		"@openzeppelin/contracts/utils/Pausable.sol": {
+			"keccak256": "0xdb484371dfbb848cb6f5d70464e9ac9b2900e4164ead76bbce4fef0b44bcc68f",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f9d6f6f6600a2bec622f699081b58350873b5e63ce05464d17d674a290bb8a7c",
+				"dweb:/ipfs/QmQKVzSQY1PM3Bid4QhgVVZyx6B4Jx7XgaQzLKHj38vJz8"
+			]
+		},
+		"@openzeppelin/contracts/utils/ReentrancyGuard.sol": {
+			"keccak256": "0xa516cbf1c7d15d3517c2d668601ce016c54395bf5171918a14e2686977465f53",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://1e1d079e8edfb58efd23a311e315a4807b01b5d1cf153f8fa2d0608b9dec3e99",
+				"dweb:/ipfs/QmTBExeX2SDTkn5xbk5ssbYSx7VqRp9H4Ux1CY4uQM4b9N"
+			]
+		},
+		"@openzeppelin/contracts/utils/StorageSlot.sol": {
+			"keccak256": "0xcf74f855663ce2ae00ed8352666b7935f6cddea2932fdf2c3ecd30a9b1cd0e97",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://9f660b1f351b757dfe01438e59888f31f33ded3afcf5cb5b0d9bf9aa6f320a8b",
+				"dweb:/ipfs/QmarDJ5hZEgBtCmmrVzEZWjub9769eD686jmzb2XpSU1cM"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/ERC165.sol": {
+			"keccak256": "0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://81233d1f98060113d9922180bb0f14f8335856fe9f339134b09335e9f678c377",
+				"dweb:/ipfs/QmWh6R35SarhAn4z2wH8SU456jJSYL2FgucfTFgbHJJN4E"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/IERC165.sol": {
+			"keccak256": "0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617",
+				"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
+			]
+		},
+		"contracts/DriverRegistry.sol": {
+			"keccak256": "0x7c7e0b28aa3e4dfe026590738477fd0e2d85c020f4a78ee6e38b0cf67839b574",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ed23737b4fe4c4a9df97b6a456a945e2be783b955b96814bd0ae34a284032381",
+				"dweb:/ipfs/QmX2XFd7z22n9JBHcbgb4MovEFoWb21xQQfST3oW7xhYw8"
+			]
+		},
+		"contracts/InsurancePolicy.sol": {
+			"keccak256": "0xcdcc38789a1b19cb542bd052b071697927083ea855eb784cc2de4ca0fa70b66a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://247ae4642ec07cbd8c852c4044269624fe1bae9e85feaca8ff7c9fad4e8ad0af",
+				"dweb:/ipfs/QmcnkL4SXeWw4RgVAWiAfA1fUv43q4PUPnWHd2D4gwSpV9"
+			]
+		},
+		"contracts/InsurancePool.sol": {
+			"keccak256": "0xd1f5677782149467feba1af9795d43a9f3b7af997bf331663f11c839d3826be1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4259ac9b446fa9da5b96b8ff48634401df3e1f7cbb85f1bc29d7d124ddfd7983",
+				"dweb:/ipfs/QmVps3RUWEYhHmuRQvW6Xr7TrggsuGUoftPWGJteGtRdTK"
+			]
+		},
+		"contracts/SafetyScoreOracle.sol": {
+			"keccak256": "0x9823f817d545bcd5ee7b142ffcb59ea5e798719e11c22bdef715f5f500cb9705",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://55e5f3357008dabd2d91c81e8b0774d07920de55127696381cec72e4c448bc7d",
+				"dweb:/ipfs/QmZqNqXyqBuLfQxNtJGQjYa47uCFKza5reGFzQporwJ2ur"
+			]
+		},
+		"contracts/libraries/InsuranceErrors.sol": {
+			"keccak256": "0xd4d5b0f0942ad148952b3f6926e8320beec90666803e3c71fca3b0e3210aaa81",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://83016919bf7471592df376698c9021a5b01f7d68594e851cb98786c2f4c56c51",
+				"dweb:/ipfs/QmcefYYpnA7p7KT9QUaBBxkB3BWsMNWiDP5Fcq2diCeabj"
+			]
+		},
+		"contracts/libraries/InsuranceEvents.sol": {
+			"keccak256": "0x849ac9f76fdacbb9e6124ecb517636035d084afce7e0c5e1a96839e2f1b8e65d",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://30a20c9196d4242235d4d074a3216907bcdc1ff09e478da56def317ce185782b",
+				"dweb:/ipfs/QmZMkV9iD6xJXh91JNYxFPepgGfgANLrJtM5ggcdrN3v76"
+			]
+		},
+		"contracts/libraries/InsuranceTypes.sol": {
+			"keccak256": "0x6ca8b2f4ac3af019f94999c581b02a8e4c4cfc63fa9f18d8deb3c71b817197b8",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://fef363ba8a57b1a588309f68c7df03b97e3ce9262991ade38ee77a5ba1652d2f",
+				"dweb:/ipfs/QmfDH9tW8npBUUmq2Jt2gz1t5MPjPsXYZd7oFiH2RLxUnU"
+			]
+		}
+	},
+	"version": 1
+}

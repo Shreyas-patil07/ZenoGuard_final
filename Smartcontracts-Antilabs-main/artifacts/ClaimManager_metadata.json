@@ -1,0 +1,1351 @@
+{
+	"compiler": {
+		"version": "0.8.34+commit.80d5c536"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "admin",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "insurancePolicy_",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "insurancePool_",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "AccessControlBadConfirmation",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "neededRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "AccessControlUnauthorizedAccount",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "AccidentNotVerified",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pendingClaimId",
+						"type": "uint256"
+					}
+				],
+				"name": "ClaimAlreadyPending",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "requested",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "coverage",
+						"type": "uint256"
+					}
+				],
+				"name": "ClaimExceedsCoverage",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "ClaimNotFound",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "DuplicatePayout",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "EnforcedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ExpectedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "InvalidClaimState",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "caller",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "NotPolicyOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint64",
+						"name": "expiryTime",
+						"type": "uint64"
+					}
+				],
+				"name": "PolicyExpired",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "PolicyNotActive",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ReentrancyGuardReentrantCall",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "TransferFailed",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAddress",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAmount",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "approvedBy",
+						"type": "address"
+					}
+				],
+				"name": "ClaimApproved",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "reason",
+						"type": "string"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "rejectedBy",
+						"type": "address"
+					}
+				],
+				"name": "ClaimRejected",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "ClaimSubmitted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "pausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyPaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "unpausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyUnpaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Paused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "driver",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "PayoutCompleted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "previousAdminRole",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "newAdminRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "RoleAdminChanged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Unpaused",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "DEFAULT_ADMIN_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "INSURANCE_COMPANY_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "ORACLE_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "PAUSER_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "approveClaim",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "getClaim",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "id",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "policyId",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "amount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "submitted",
+								"type": "bool"
+							},
+							{
+								"internalType": "bool",
+								"name": "accidentVerified",
+								"type": "bool"
+							},
+							{
+								"internalType": "bool",
+								"name": "approved",
+								"type": "bool"
+							},
+							{
+								"internalType": "bool",
+								"name": "paid",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct InsuranceTypes.Claim",
+						"name": "claim",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "getPendingClaim",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					}
+				],
+				"name": "getRoleAdmin",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "grantRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "hasRole",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "insurancePolicy",
+				"outputs": [
+					{
+						"internalType": "contract InsurancePolicy",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "insurancePool",
+				"outputs": [
+					{
+						"internalType": "contract InsurancePool",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"name": "isClaimRejected",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "rejected",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "pause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "paused",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "reason",
+						"type": "string"
+					}
+				],
+				"name": "rejectClaim",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "callerConfirmation",
+						"type": "address"
+					}
+				],
+				"name": "renounceRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "revokeRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "submitClaim",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes4",
+						"name": "interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "unpause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "isLegitimate",
+						"type": "bool"
+					}
+				],
+				"name": "verifyAccident",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "Senior Solidity Architect",
+			"details": "The `Claim` struct is kept to exactly the fields specified (id,      policyId, amount, submitted, accidentVerified, approved, paid) — a      claim's \"rejected\" outcome and \"is currently pending\" status are      tracked in separate internal mappings rather than added to the      struct, so the on-chain struct layout matches the spec exactly.      Role model:      - DEFAULT_ADMIN_ROLE: grants/revokes roles below; multisig/timelock        in production.      - PAUSER_ROLE: may pause/unpause this contract in an emergency.      - ORACLE_ROLE: held by the trusted off-chain oracle backend; the        only accounts permitted to verify (or refute) a claimed accident.      - INSURANCE_COMPANY_ROLE: may approve or reject claims. Approval        automatically triggers payout in the same transaction.      This contract must itself hold SPENDER_ROLE on InsurancePool to      call `payOut`, granted post-deployment by the InsurancePool admin      (see deploy.js).",
+			"errors": {
+				"AccessControlBadConfirmation()": [
+					{
+						"details": "The caller of a function is not the expected one. NOTE: Don't confuse with {AccessControlUnauthorizedAccount}."
+					}
+				],
+				"AccessControlUnauthorizedAccount(address,bytes32)": [
+					{
+						"details": "The `account` is missing a role."
+					}
+				],
+				"AccidentNotVerified(uint256)": [
+					{
+						"params": {
+							"claimId": "The claim ID."
+						}
+					}
+				],
+				"ClaimAlreadyPending(uint256,uint256)": [
+					{
+						"params": {
+							"pendingClaimId": "The claim ID that is still pending.",
+							"policyId": "The policy ID with a pending claim."
+						}
+					}
+				],
+				"ClaimExceedsCoverage(uint256,uint256)": [
+					{
+						"params": {
+							"coverage": "The policy's maximum coverage amount.",
+							"requested": "The requested claim amount."
+						}
+					}
+				],
+				"ClaimNotFound(uint256)": [
+					{
+						"params": {
+							"claimId": "The unrecognized claim ID."
+						}
+					}
+				],
+				"DuplicatePayout(uint256)": [
+					{
+						"params": {
+							"claimId": "The claim ID already paid."
+						}
+					}
+				],
+				"EnforcedPause()": [
+					{
+						"details": "The operation failed because the contract is paused."
+					}
+				],
+				"ExpectedPause()": [
+					{
+						"details": "The operation failed because the contract is not paused."
+					}
+				],
+				"InvalidClaimState(uint256)": [
+					{
+						"params": {
+							"claimId": "The claim ID."
+						}
+					}
+				],
+				"NotPolicyOwner(address,uint256)": [
+					{
+						"params": {
+							"caller": "The address that attempted the action.",
+							"policyId": "The policy ID they attempted to act on."
+						}
+					}
+				],
+				"PolicyExpired(uint256,uint64)": [
+					{
+						"params": {
+							"expiryTime": "The timestamp at which the policy expired.",
+							"policyId": "The expired policy ID."
+						}
+					}
+				],
+				"PolicyNotActive(uint256)": [
+					{
+						"params": {
+							"policyId": "The policy ID in question."
+						}
+					}
+				],
+				"ReentrancyGuardReentrantCall()": [
+					{
+						"details": "Unauthorized reentrant call."
+					}
+				],
+				"TransferFailed(address,uint256)": [
+					{
+						"params": {
+							"amount": "The amount that failed to transfer.",
+							"to": "The intended recipient."
+						}
+					}
+				]
+			},
+			"events": {
+				"ClaimApproved(uint256,address)": {
+					"params": {
+						"approvedBy": "The insurance-company address that approved it.",
+						"claimId": "The approved claim ID."
+					}
+				},
+				"ClaimRejected(uint256,string,address)": {
+					"params": {
+						"claimId": "The rejected claim ID.",
+						"reason": "A short human-readable reason.",
+						"rejectedBy": "The address that rejected the claim."
+					}
+				},
+				"ClaimSubmitted(uint256,uint256,uint256)": {
+					"params": {
+						"amount": "The amount requested, in wei.",
+						"claimId": "The newly created claim ID.",
+						"policyId": "The policy the claim is filed against."
+					}
+				},
+				"EmergencyPaused(address)": {
+					"params": {
+						"pausedBy": "The address that triggered the pause."
+					}
+				},
+				"EmergencyUnpaused(address)": {
+					"params": {
+						"unpausedBy": "The address that lifted the pause."
+					}
+				},
+				"Paused(address)": {
+					"details": "Emitted when the pause is triggered by `account`."
+				},
+				"PayoutCompleted(uint256,address,uint256)": {
+					"params": {
+						"amount": "The amount paid out, in wei.",
+						"claimId": "The paid claim ID.",
+						"driver": "The recipient driver wallet."
+					}
+				},
+				"RoleAdminChanged(bytes32,bytes32,bytes32)": {
+					"details": "Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole` `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite {RoleAdminChanged} not being emitted to signal this."
+				},
+				"RoleGranted(bytes32,address,address)": {
+					"details": "Emitted when `account` is granted `role`. `sender` is the account that originated the contract call. This account bears the admin role (for the granted role). Expected in cases where the role was granted using the internal {AccessControl-_grantRole}."
+				},
+				"RoleRevoked(bytes32,address,address)": {
+					"details": "Emitted when `account` is revoked `role`. `sender` is the account that originated the contract call:   - if using `revokeRole`, it is the admin role bearer   - if using `renounceRole`, it is the role bearer (i.e. `account`)"
+				},
+				"Unpaused(address)": {
+					"details": "Emitted when the pause is lifted by `account`."
+				}
+			},
+			"kind": "dev",
+			"methods": {
+				"approveClaim(uint256)": {
+					"details": "Restricted to INSURANCE_COMPANY_ROLE. Requires the accident to      have been oracle-verified first. Re-checks the policy is still      active at approval time (it may have expired since submission),      reverting with `PolicyExpired` if so. Follows checks-effects-      interactions: `approved`/`paid` are set and the pending-claim      slot is cleared BEFORE the external payout call, and      `nonReentrant` guards the call itself — this also means a      reentrant call back into this function fails the `!claim.paid`      check even before the guard is considered.",
+					"params": {
+						"claimId": "The claim ID to approve and pay out."
+					}
+				},
+				"constructor": {
+					"params": {
+						"admin": "The address to receive DEFAULT_ADMIN_ROLE and PAUSER_ROLE.",
+						"insurancePolicy_": "Deployed InsurancePolicy contract address.",
+						"insurancePool_": "Deployed InsurancePool contract address."
+					}
+				},
+				"getClaim(uint256)": {
+					"details": "Reverts with `ClaimNotFound` if `claimId` does not exist.",
+					"params": {
+						"claimId": "The claim ID to look up."
+					},
+					"returns": {
+						"claim": "The `InsuranceTypes.Claim` record."
+					}
+				},
+				"getPendingClaim(uint256)": {
+					"params": {
+						"policyId": "The policy ID to check."
+					},
+					"returns": {
+						"claimId": "The pending claim ID, or 0 if none is pending."
+					}
+				},
+				"getRoleAdmin(bytes32)": {
+					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+				},
+				"grantRole(bytes32,address)": {
+					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
+				},
+				"hasRole(bytes32,address)": {
+					"details": "Returns `true` if `account` has been granted `role`."
+				},
+				"isClaimRejected(uint256)": {
+					"params": {
+						"claimId": "The claim ID to check."
+					},
+					"returns": {
+						"rejected": "True if the claim was rejected by the oracle or the insurer."
+					}
+				},
+				"paused()": {
+					"details": "Returns true if the contract is paused, and false otherwise."
+				},
+				"rejectClaim(uint256,string)": {
+					"details": "Restricted to INSURANCE_COMPANY_ROLE.",
+					"params": {
+						"claimId": "The claim ID to reject.",
+						"reason": "A short human-readable reason, included in the event."
+					}
+				},
+				"renounceRole(bytes32,address)": {
+					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `callerConfirmation`. May emit a {RoleRevoked} event."
+				},
+				"revokeRole(bytes32,address)": {
+					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
+				},
+				"submitClaim(uint256,uint256)": {
+					"details": "Only the policy's driver may submit a claim on it. Reverts if      the policy is not currently active (covers both cancelled and      expired policies), the requested amount exceeds coverage, or a      prior claim on the same policy is still unresolved (the      duplicate-claim guard).",
+					"params": {
+						"amount": "The amount being claimed, in wei.",
+						"policyId": "The policy ID to claim against."
+					},
+					"returns": {
+						"claimId": "The newly created claim ID."
+					}
+				},
+				"supportsInterface(bytes4)": {
+					"details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+				},
+				"verifyAccident(uint256,bool)": {
+					"details": "Restricted to ORACLE_ROLE. If `isLegitimate` is false, the claim      is immediately rejected (`ClaimRejected` is emitted and the      pending-claim slot is freed so the driver may submit a corrected      claim later). Reverts with `InvalidClaimState` if the claim was      already rejected, approved, paid, or previously verified.",
+					"params": {
+						"claimId": "The claim ID to verify.",
+						"isLegitimate": "Whether the oracle confirms the accident is legitimate."
+					}
+				}
+			},
+			"stateVariables": {
+				"_claimExists": {
+					"details": "Kept separate from the `submitted` field so `submitted` retains      its literal meaning (\"this claim was submitted\") as a permanent      historical bit, rather than being repurposed as an existence flag."
+				}
+			},
+			"title": "ClaimManager",
+			"version": 1
+		},
+		"userdoc": {
+			"errors": {
+				"AccidentNotVerified(uint256)": [
+					{
+						"notice": "Thrown when attempting to approve or pay out a claim whose accident         has not yet been verified by the oracle."
+					}
+				],
+				"ClaimAlreadyPending(uint256,uint256)": [
+					{
+						"notice": "Thrown when a driver attempts to submit a new claim while a prior         claim on the same policy is still pending resolution."
+					}
+				],
+				"ClaimExceedsCoverage(uint256,uint256)": [
+					{
+						"notice": "Thrown when a claim's requested amount exceeds the policy's coverage amount."
+					}
+				],
+				"ClaimNotFound(uint256)": [
+					{
+						"notice": "Thrown when referencing a claim ID that does not exist."
+					}
+				],
+				"DuplicatePayout(uint256)": [
+					{
+						"notice": "Thrown when attempting to pay out a claim that has already been paid."
+					}
+				],
+				"InvalidClaimState(uint256)": [
+					{
+						"notice": "Thrown when attempting to verify an accident for a claim that was         already verified, or approve/pay a claim not yet in the required state."
+					}
+				],
+				"NotPolicyOwner(address,uint256)": [
+					{
+						"notice": "Thrown when a caller other than the policy's driver attempts a driver-only action."
+					}
+				],
+				"PolicyExpired(uint256,uint64)": [
+					{
+						"notice": "Thrown when an action is attempted on a policy that has expired."
+					}
+				],
+				"PolicyNotActive(uint256)": [
+					{
+						"notice": "Thrown when an action requires an active policy but the policy is not active."
+					}
+				],
+				"TransferFailed(address,uint256)": [
+					{
+						"notice": "Thrown when a native-token transfer (ETH) fails."
+					}
+				],
+				"ZeroAddress()": [
+					{
+						"notice": "Thrown when a zero address is passed where a non-zero address is required."
+					}
+				],
+				"ZeroAmount()": [
+					{
+						"notice": "Thrown when a numeric argument is zero but must be non-zero."
+					}
+				]
+			},
+			"events": {
+				"ClaimApproved(uint256,address)": {
+					"notice": "Emitted when the insurance company approves a claim for payout."
+				},
+				"ClaimRejected(uint256,string,address)": {
+					"notice": "Emitted when a claim is rejected."
+				},
+				"ClaimSubmitted(uint256,uint256,uint256)": {
+					"notice": "Emitted when a driver submits a new claim."
+				},
+				"EmergencyPaused(address)": {
+					"notice": "Emitted when a contract is paused in response to an emergency."
+				},
+				"EmergencyUnpaused(address)": {
+					"notice": "Emitted when a contract is unpaused, resuming normal operations."
+				},
+				"PayoutCompleted(uint256,address,uint256)": {
+					"notice": "Emitted when a claim payout has been successfully transferred to the driver."
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"INSURANCE_COMPANY_ROLE()": {
+					"notice": "Allowed to approve (triggering automatic payout) or reject claims."
+				},
+				"ORACLE_ROLE()": {
+					"notice": "Allowed to verify (or refute) a claimed accident."
+				},
+				"PAUSER_ROLE()": {
+					"notice": "Allowed to pause/unpause this contract in an emergency."
+				},
+				"approveClaim(uint256)": {
+					"notice": "Approves a verified claim and automatically transfers payout."
+				},
+				"getClaim(uint256)": {
+					"notice": "Returns the full on-chain record for a claim."
+				},
+				"getPendingClaim(uint256)": {
+					"notice": "Returns the claim ID currently pending resolution on a policy, if any."
+				},
+				"insurancePolicy()": {
+					"notice": "The InsurancePolicy contract this contract validates claims against."
+				},
+				"insurancePool()": {
+					"notice": "The InsurancePool contract this contract triggers payouts from."
+				},
+				"isClaimRejected(uint256)": {
+					"notice": "Returns whether a claim was rejected."
+				},
+				"pause()": {
+					"notice": "Pauses claim submission, verification, approval, and rejection."
+				},
+				"rejectClaim(uint256,string)": {
+					"notice": "Rejects a claim outright (e.g. suspected fraud), regardless of         its accident-verification state, as long as it has not already         been approved or paid."
+				},
+				"submitClaim(uint256,uint256)": {
+					"notice": "Submits a new claim against an active policy."
+				},
+				"unpause()": {
+					"notice": "Resumes normal operation after a pause."
+				},
+				"verifyAccident(uint256,bool)": {
+					"notice": "Records the oracle's verification of the accident underlying a claim."
+				}
+			},
+			"notice": "Manages the claim lifecycle: submission, oracle-verified accident         confirmation, insurer approval, and automatic payout. This         contract owns claim state entirely — the SafetyScoreOracle         contract is NOT involved in accident verification (that would mix         two unrelated concerns); ORACLE_ROLE holders call this contract         directly for accident verification, since claim state lives here.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/ClaimManager.sol": "ClaimManager"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts/access/AccessControl.sol": {
+			"keccak256": "0x4686ec784d75f95beaf2bf5b5f26e5f946d4c864aaee9c3c62bdc18381f5e017",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://26710ca191913f3c9df542079c4a6dcff02968e92d4f7357daefef9fbe72a19c",
+				"dweb:/ipfs/QmanHbeWuBbVEqXySHa1zhm2rExjYpChDBubBaJNTCa2JB"
+			]
+		},
+		"@openzeppelin/contracts/access/IAccessControl.sol": {
+			"keccak256": "0xbff9f59c84e5337689161ce7641c0ef8e872d6a7536fbc1f5133f128887aba3c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b308f882e796f7b79c9502deacb0a62983035c6f6f4e962b319ba6a1f4a77d3d",
+				"dweb:/ipfs/QmaWCW7ahEQqFjwhSUhV7Ae7WhfNvzSpE7DQ58hvEooqPL"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+				"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+			]
+		},
+		"@openzeppelin/contracts/utils/Pausable.sol": {
+			"keccak256": "0xdb484371dfbb848cb6f5d70464e9ac9b2900e4164ead76bbce4fef0b44bcc68f",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f9d6f6f6600a2bec622f699081b58350873b5e63ce05464d17d674a290bb8a7c",
+				"dweb:/ipfs/QmQKVzSQY1PM3Bid4QhgVVZyx6B4Jx7XgaQzLKHj38vJz8"
+			]
+		},
+		"@openzeppelin/contracts/utils/ReentrancyGuard.sol": {
+			"keccak256": "0xa516cbf1c7d15d3517c2d668601ce016c54395bf5171918a14e2686977465f53",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://1e1d079e8edfb58efd23a311e315a4807b01b5d1cf153f8fa2d0608b9dec3e99",
+				"dweb:/ipfs/QmTBExeX2SDTkn5xbk5ssbYSx7VqRp9H4Ux1CY4uQM4b9N"
+			]
+		},
+		"@openzeppelin/contracts/utils/StorageSlot.sol": {
+			"keccak256": "0xcf74f855663ce2ae00ed8352666b7935f6cddea2932fdf2c3ecd30a9b1cd0e97",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://9f660b1f351b757dfe01438e59888f31f33ded3afcf5cb5b0d9bf9aa6f320a8b",
+				"dweb:/ipfs/QmarDJ5hZEgBtCmmrVzEZWjub9769eD686jmzb2XpSU1cM"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/ERC165.sol": {
+			"keccak256": "0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://81233d1f98060113d9922180bb0f14f8335856fe9f339134b09335e9f678c377",
+				"dweb:/ipfs/QmWh6R35SarhAn4z2wH8SU456jJSYL2FgucfTFgbHJJN4E"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/IERC165.sol": {
+			"keccak256": "0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617",
+				"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
+			]
+		},
+		"contracts/ClaimManager.sol": {
+			"keccak256": "0xdb124864f88698cbdcb6f1e335b05545aa6134a662b92ebe222fb2dfced89cfd",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://0b353adb42bad23b47a2158b190aa6a3b106cdff0b5a0f4d04b8817257c88b14",
+				"dweb:/ipfs/QmRnWRnxX59iSnUhbGQuwYDMSirN95ok6a6nxcoog5BF31"
+			]
+		},
+		"contracts/DriverRegistry.sol": {
+			"keccak256": "0x7c7e0b28aa3e4dfe026590738477fd0e2d85c020f4a78ee6e38b0cf67839b574",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ed23737b4fe4c4a9df97b6a456a945e2be783b955b96814bd0ae34a284032381",
+				"dweb:/ipfs/QmX2XFd7z22n9JBHcbgb4MovEFoWb21xQQfST3oW7xhYw8"
+			]
+		},
+		"contracts/InsurancePolicy.sol": {
+			"keccak256": "0xcdcc38789a1b19cb542bd052b071697927083ea855eb784cc2de4ca0fa70b66a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://247ae4642ec07cbd8c852c4044269624fe1bae9e85feaca8ff7c9fad4e8ad0af",
+				"dweb:/ipfs/QmcnkL4SXeWw4RgVAWiAfA1fUv43q4PUPnWHd2D4gwSpV9"
+			]
+		},
+		"contracts/InsurancePool.sol": {
+			"keccak256": "0xd1f5677782149467feba1af9795d43a9f3b7af997bf331663f11c839d3826be1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4259ac9b446fa9da5b96b8ff48634401df3e1f7cbb85f1bc29d7d124ddfd7983",
+				"dweb:/ipfs/QmVps3RUWEYhHmuRQvW6Xr7TrggsuGUoftPWGJteGtRdTK"
+			]
+		},
+		"contracts/SafetyScoreOracle.sol": {
+			"keccak256": "0x9823f817d545bcd5ee7b142ffcb59ea5e798719e11c22bdef715f5f500cb9705",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://55e5f3357008dabd2d91c81e8b0774d07920de55127696381cec72e4c448bc7d",
+				"dweb:/ipfs/QmZqNqXyqBuLfQxNtJGQjYa47uCFKza5reGFzQporwJ2ur"
+			]
+		},
+		"contracts/libraries/InsuranceErrors.sol": {
+			"keccak256": "0xd4d5b0f0942ad148952b3f6926e8320beec90666803e3c71fca3b0e3210aaa81",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://83016919bf7471592df376698c9021a5b01f7d68594e851cb98786c2f4c56c51",
+				"dweb:/ipfs/QmcefYYpnA7p7KT9QUaBBxkB3BWsMNWiDP5Fcq2diCeabj"
+			]
+		},
+		"contracts/libraries/InsuranceEvents.sol": {
+			"keccak256": "0x849ac9f76fdacbb9e6124ecb517636035d084afce7e0c5e1a96839e2f1b8e65d",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://30a20c9196d4242235d4d074a3216907bcdc1ff09e478da56def317ce185782b",
+				"dweb:/ipfs/QmZMkV9iD6xJXh91JNYxFPepgGfgANLrJtM5ggcdrN3v76"
+			]
+		},
+		"contracts/libraries/InsuranceTypes.sol": {
+			"keccak256": "0x6ca8b2f4ac3af019f94999c581b02a8e4c4cfc63fa9f18d8deb3c71b817197b8",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://fef363ba8a57b1a588309f68c7df03b97e3ce9262991ade38ee77a5ba1652d2f",
+				"dweb:/ipfs/QmfDH9tW8npBUUmq2Jt2gz1t5MPjPsXYZd7oFiH2RLxUnU"
+			]
+		}
+	},
+	"version": 1
+}

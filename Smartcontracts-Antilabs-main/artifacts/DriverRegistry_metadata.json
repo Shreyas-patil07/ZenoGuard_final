@@ -1,0 +1,799 @@
+{
+	"compiler": {
+		"version": "0.8.34+commit.80d5c536"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "admin",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "AccessControlBadConfirmation",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "neededRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "AccessControlUnauthorizedAccount",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					}
+				],
+				"name": "DriverAlreadyRegistered",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					}
+				],
+				"name": "DriverNotRegistered",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "EnforcedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ExpectedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAddress",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAmount",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "bytes32",
+						"name": "driverId",
+						"type": "bytes32"
+					}
+				],
+				"name": "DriverRegistered",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "pausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyPaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "unpausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyUnpaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Paused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "previousAdminRole",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "newAdminRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "RoleAdminChanged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Unpaused",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "DEFAULT_ADMIN_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "PAUSER_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "POLICY_MANAGER_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					}
+				],
+				"name": "getDriver",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "wallet",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "driverId",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "policyId",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "registered",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct InsuranceTypes.Driver",
+						"name": "driver",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					}
+				],
+				"name": "getRoleAdmin",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "grantRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "hasRole",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					}
+				],
+				"name": "isRegistered",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "registered",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "wallet",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "policyId",
+						"type": "uint256"
+					}
+				],
+				"name": "linkPolicy",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "pause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "paused",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "driverId",
+						"type": "bytes32"
+					}
+				],
+				"name": "registerDriver",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "callerConfirmation",
+						"type": "address"
+					}
+				],
+				"name": "renounceRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "revokeRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes4",
+						"name": "interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "unpause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "Senior Solidity Architect",
+			"details": "`driverId` is a bytes32 handle minted off-chain (e.g. a hash of a      backend UUID) and passed in at registration time; this contract does      not generate identity, it only anchors it on-chain and prevents a      wallet from registering twice.      Role model:      - DEFAULT_ADMIN_ROLE: grants/revokes all roles below; should be a        multisig/timelock in production, not an EOA.      - PAUSER_ROLE: may pause/unpause this contract in an emergency.      - POLICY_MANAGER_ROLE: granted exclusively to the deployed        InsurancePolicy contract address, allowing it (and only it) to        link a policy ID to a driver once a policy is purchased.",
+			"errors": {
+				"AccessControlBadConfirmation()": [
+					{
+						"details": "The caller of a function is not the expected one. NOTE: Don't confuse with {AccessControlUnauthorizedAccount}."
+					}
+				],
+				"AccessControlUnauthorizedAccount(address,bytes32)": [
+					{
+						"details": "The `account` is missing a role."
+					}
+				],
+				"DriverAlreadyRegistered(address)": [
+					{
+						"params": {
+							"wallet": "The wallet address already on record."
+						}
+					}
+				],
+				"DriverNotRegistered(address)": [
+					{
+						"params": {
+							"wallet": "The unrecognized wallet address."
+						}
+					}
+				],
+				"EnforcedPause()": [
+					{
+						"details": "The operation failed because the contract is paused."
+					}
+				],
+				"ExpectedPause()": [
+					{
+						"details": "The operation failed because the contract is not paused."
+					}
+				]
+			},
+			"events": {
+				"DriverRegistered(address,bytes32)": {
+					"params": {
+						"driverId": "The off-chain-assigned driver identifier.",
+						"wallet": "The driver's wallet address."
+					}
+				},
+				"EmergencyPaused(address)": {
+					"params": {
+						"pausedBy": "The address that triggered the pause."
+					}
+				},
+				"EmergencyUnpaused(address)": {
+					"params": {
+						"unpausedBy": "The address that lifted the pause."
+					}
+				},
+				"Paused(address)": {
+					"details": "Emitted when the pause is triggered by `account`."
+				},
+				"RoleAdminChanged(bytes32,bytes32,bytes32)": {
+					"details": "Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole` `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite {RoleAdminChanged} not being emitted to signal this."
+				},
+				"RoleGranted(bytes32,address,address)": {
+					"details": "Emitted when `account` is granted `role`. `sender` is the account that originated the contract call. This account bears the admin role (for the granted role). Expected in cases where the role was granted using the internal {AccessControl-_grantRole}."
+				},
+				"RoleRevoked(bytes32,address,address)": {
+					"details": "Emitted when `account` is revoked `role`. `sender` is the account that originated the contract call:   - if using `revokeRole`, it is the admin role bearer   - if using `renounceRole`, it is the role bearer (i.e. `account`)"
+				},
+				"Unpaused(address)": {
+					"details": "Emitted when the pause is lifted by `account`."
+				}
+			},
+			"kind": "dev",
+			"methods": {
+				"constructor": {
+					"params": {
+						"admin": "The address to receive DEFAULT_ADMIN_ROLE and PAUSER_ROLE.              In production this should be a multisig or timelock."
+					}
+				},
+				"getDriver(address)": {
+					"details": "Reverts with `DriverNotRegistered` if the wallet never registered.",
+					"params": {
+						"wallet": "The wallet address to look up."
+					},
+					"returns": {
+						"driver": "The wallet's `InsuranceTypes.Driver` record."
+					}
+				},
+				"getRoleAdmin(bytes32)": {
+					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+				},
+				"grantRole(bytes32,address)": {
+					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
+				},
+				"hasRole(bytes32,address)": {
+					"details": "Returns `true` if `account` has been granted `role`."
+				},
+				"isRegistered(address)": {
+					"params": {
+						"wallet": "The wallet address to check."
+					},
+					"returns": {
+						"registered": "True if the wallet has an associated driver record."
+					}
+				},
+				"linkPolicy(address,uint256)": {
+					"details": "Restricted to POLICY_MANAGER_ROLE (the InsurancePolicy contract).      Reverts with `DriverNotRegistered` if the wallet is not registered.",
+					"params": {
+						"policyId": "The policy ID to associate with this driver.",
+						"wallet": "The driver's wallet address."
+					}
+				},
+				"paused()": {
+					"details": "Returns true if the contract is paused, and false otherwise."
+				},
+				"registerDriver(bytes32)": {
+					"details": "Self-service only: a wallet can register itself, but nothing else      can register on its behalf, since driver identity is tied 1:1 to      the wallet signing the transaction. Reverts with      `DriverAlreadyRegistered` if the caller has already registered.",
+					"params": {
+						"driverId": "The off-chain-assigned driver identifier (e.g. a hash                  of a backend UUID) to anchor on-chain."
+					}
+				},
+				"renounceRole(bytes32,address)": {
+					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `callerConfirmation`. May emit a {RoleRevoked} event."
+				},
+				"revokeRole(bytes32,address)": {
+					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
+				},
+				"supportsInterface(bytes4)": {
+					"details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+				}
+			},
+			"title": "DriverRegistry",
+			"version": 1
+		},
+		"userdoc": {
+			"errors": {
+				"DriverAlreadyRegistered(address)": [
+					{
+						"notice": "Thrown when trying to register a wallet that is already registered."
+					}
+				],
+				"DriverNotRegistered(address)": [
+					{
+						"notice": "Thrown when referencing a wallet that has not registered as a driver."
+					}
+				],
+				"ZeroAddress()": [
+					{
+						"notice": "Thrown when a zero address is passed where a non-zero address is required."
+					}
+				],
+				"ZeroAmount()": [
+					{
+						"notice": "Thrown when a numeric argument is zero but must be non-zero."
+					}
+				]
+			},
+			"events": {
+				"DriverRegistered(address,bytes32)": {
+					"notice": "Emitted when a new driver registers with the platform."
+				},
+				"EmergencyPaused(address)": {
+					"notice": "Emitted when a contract is paused in response to an emergency."
+				},
+				"EmergencyUnpaused(address)": {
+					"notice": "Emitted when a contract is unpaused, resuming normal operations."
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"PAUSER_ROLE()": {
+					"notice": "Allowed to pause/unpause this contract in an emergency."
+				},
+				"POLICY_MANAGER_ROLE()": {
+					"notice": "Granted exclusively to the InsurancePolicy contract address,         allowing it to link a purchased policy ID to a driver record."
+				},
+				"getDriver(address)": {
+					"notice": "Returns the on-chain driver record for a wallet."
+				},
+				"isRegistered(address)": {
+					"notice": "Returns whether a wallet is registered as a driver."
+				},
+				"linkPolicy(address,uint256)": {
+					"notice": "Links a purchased policy ID to a driver's wallet."
+				},
+				"pause()": {
+					"notice": "Pauses all state-mutating functions on this contract."
+				},
+				"registerDriver(bytes32)": {
+					"notice": "Registers the caller's wallet as a driver, linked to an         off-chain-assigned driver identifier."
+				},
+				"unpause()": {
+					"notice": "Resumes normal operation after a pause."
+				}
+			},
+			"notice": "Minimal on-chain link between a wallet, an off-chain driver         identity, and an active policy ID. Stores nothing else — trip         history, AI inputs, documents, and telemetry all live off-chain         in the backend, per project scope.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/DriverRegistry.sol": "DriverRegistry"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts/access/AccessControl.sol": {
+			"keccak256": "0x4686ec784d75f95beaf2bf5b5f26e5f946d4c864aaee9c3c62bdc18381f5e017",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://26710ca191913f3c9df542079c4a6dcff02968e92d4f7357daefef9fbe72a19c",
+				"dweb:/ipfs/QmanHbeWuBbVEqXySHa1zhm2rExjYpChDBubBaJNTCa2JB"
+			]
+		},
+		"@openzeppelin/contracts/access/IAccessControl.sol": {
+			"keccak256": "0xbff9f59c84e5337689161ce7641c0ef8e872d6a7536fbc1f5133f128887aba3c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b308f882e796f7b79c9502deacb0a62983035c6f6f4e962b319ba6a1f4a77d3d",
+				"dweb:/ipfs/QmaWCW7ahEQqFjwhSUhV7Ae7WhfNvzSpE7DQ58hvEooqPL"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+				"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+			]
+		},
+		"@openzeppelin/contracts/utils/Pausable.sol": {
+			"keccak256": "0xdb484371dfbb848cb6f5d70464e9ac9b2900e4164ead76bbce4fef0b44bcc68f",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f9d6f6f6600a2bec622f699081b58350873b5e63ce05464d17d674a290bb8a7c",
+				"dweb:/ipfs/QmQKVzSQY1PM3Bid4QhgVVZyx6B4Jx7XgaQzLKHj38vJz8"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/ERC165.sol": {
+			"keccak256": "0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://81233d1f98060113d9922180bb0f14f8335856fe9f339134b09335e9f678c377",
+				"dweb:/ipfs/QmWh6R35SarhAn4z2wH8SU456jJSYL2FgucfTFgbHJJN4E"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/IERC165.sol": {
+			"keccak256": "0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617",
+				"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
+			]
+		},
+		"contracts/DriverRegistry.sol": {
+			"keccak256": "0x7c7e0b28aa3e4dfe026590738477fd0e2d85c020f4a78ee6e38b0cf67839b574",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ed23737b4fe4c4a9df97b6a456a945e2be783b955b96814bd0ae34a284032381",
+				"dweb:/ipfs/QmX2XFd7z22n9JBHcbgb4MovEFoWb21xQQfST3oW7xhYw8"
+			]
+		},
+		"contracts/libraries/InsuranceErrors.sol": {
+			"keccak256": "0xd4d5b0f0942ad148952b3f6926e8320beec90666803e3c71fca3b0e3210aaa81",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://83016919bf7471592df376698c9021a5b01f7d68594e851cb98786c2f4c56c51",
+				"dweb:/ipfs/QmcefYYpnA7p7KT9QUaBBxkB3BWsMNWiDP5Fcq2diCeabj"
+			]
+		},
+		"contracts/libraries/InsuranceEvents.sol": {
+			"keccak256": "0x849ac9f76fdacbb9e6124ecb517636035d084afce7e0c5e1a96839e2f1b8e65d",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://30a20c9196d4242235d4d074a3216907bcdc1ff09e478da56def317ce185782b",
+				"dweb:/ipfs/QmZMkV9iD6xJXh91JNYxFPepgGfgANLrJtM5ggcdrN3v76"
+			]
+		},
+		"contracts/libraries/InsuranceTypes.sol": {
+			"keccak256": "0x6ca8b2f4ac3af019f94999c581b02a8e4c4cfc63fa9f18d8deb3c71b817197b8",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://fef363ba8a57b1a588309f68c7df03b97e3ce9262991ade38ee77a5ba1652d2f",
+				"dweb:/ipfs/QmfDH9tW8npBUUmq2Jt2gz1t5MPjPsXYZd7oFiH2RLxUnU"
+			]
+		}
+	},
+	"version": 1
+}

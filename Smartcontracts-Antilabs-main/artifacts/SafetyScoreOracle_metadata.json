@@ -1,0 +1,680 @@
+{
+	"compiler": {
+		"version": "0.8.34+commit.80d5c536"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "admin",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "AccessControlBadConfirmation",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "neededRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "AccessControlUnauthorizedAccount",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "EnforcedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ExpectedPause",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint8",
+						"name": "score",
+						"type": "uint8"
+					}
+				],
+				"name": "InvalidSafetyScore",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "ZeroAddress",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "pausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyPaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "unpausedBy",
+						"type": "address"
+					}
+				],
+				"name": "EmergencyUnpaused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Paused",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "previousAdminRole",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "newAdminRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "RoleAdminChanged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "driver",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint8",
+						"name": "newScore",
+						"type": "uint8"
+					}
+				],
+				"name": "SafetyScoreUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "Unpaused",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "DEFAULT_ADMIN_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "ORACLE_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "PAUSER_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					}
+				],
+				"name": "getRoleAdmin",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "grantRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "hasRole",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "latestScore",
+				"outputs": [
+					{
+						"internalType": "uint8",
+						"name": "",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "pause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "paused",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "callerConfirmation",
+						"type": "address"
+					}
+				],
+				"name": "renounceRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "revokeRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "driver",
+						"type": "address"
+					},
+					{
+						"internalType": "uint8",
+						"name": "score",
+						"type": "uint8"
+					}
+				],
+				"name": "submitScore",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes4",
+						"name": "interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "unpause",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "Senior Solidity Architect",
+			"details": "Intentionally decoupled from DriverRegistry: this contract does not      check whether an address is a registered driver before accepting a      score. That validation belongs to whichever contract consumes the      score (InsurancePolicy), keeping this oracle a simple, standalone,      easily-swappable component — exactly the \"store only the minimum      verifiable state\" scope requested.      Role model:      - DEFAULT_ADMIN_ROLE: grants/revokes roles below; should be a        multisig/timelock in production.      - PAUSER_ROLE: may pause/unpause this contract in an emergency.      - ORACLE_ROLE: held by the trusted off-chain oracle backend        wallet(s); the only accounts permitted to submit scores.",
+			"errors": {
+				"AccessControlBadConfirmation()": [
+					{
+						"details": "The caller of a function is not the expected one. NOTE: Don't confuse with {AccessControlUnauthorizedAccount}."
+					}
+				],
+				"AccessControlUnauthorizedAccount(address,bytes32)": [
+					{
+						"details": "The `account` is missing a role."
+					}
+				],
+				"EnforcedPause()": [
+					{
+						"details": "The operation failed because the contract is paused."
+					}
+				],
+				"ExpectedPause()": [
+					{
+						"details": "The operation failed because the contract is not paused."
+					}
+				],
+				"InvalidSafetyScore(uint8)": [
+					{
+						"params": {
+							"score": "The invalid score that was submitted."
+						}
+					}
+				]
+			},
+			"events": {
+				"EmergencyPaused(address)": {
+					"params": {
+						"pausedBy": "The address that triggered the pause."
+					}
+				},
+				"EmergencyUnpaused(address)": {
+					"params": {
+						"unpausedBy": "The address that lifted the pause."
+					}
+				},
+				"Paused(address)": {
+					"details": "Emitted when the pause is triggered by `account`."
+				},
+				"RoleAdminChanged(bytes32,bytes32,bytes32)": {
+					"details": "Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole` `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite {RoleAdminChanged} not being emitted to signal this."
+				},
+				"RoleGranted(bytes32,address,address)": {
+					"details": "Emitted when `account` is granted `role`. `sender` is the account that originated the contract call. This account bears the admin role (for the granted role). Expected in cases where the role was granted using the internal {AccessControl-_grantRole}."
+				},
+				"RoleRevoked(bytes32,address,address)": {
+					"details": "Emitted when `account` is revoked `role`. `sender` is the account that originated the contract call:   - if using `revokeRole`, it is the admin role bearer   - if using `renounceRole`, it is the role bearer (i.e. `account`)"
+				},
+				"SafetyScoreUpdated(address,uint8)": {
+					"params": {
+						"driver": "The driver wallet whose score was updated.",
+						"newScore": "The new safety score (0-100)."
+					}
+				},
+				"Unpaused(address)": {
+					"details": "Emitted when the pause is lifted by `account`."
+				}
+			},
+			"kind": "dev",
+			"methods": {
+				"constructor": {
+					"params": {
+						"admin": "The address to receive DEFAULT_ADMIN_ROLE and PAUSER_ROLE.              In production this should be a multisig or timelock.              ORACLE_ROLE is granted separately by the admin after              deployment, to the actual oracle backend address(es)."
+					}
+				},
+				"getRoleAdmin(bytes32)": {
+					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+				},
+				"grantRole(bytes32,address)": {
+					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
+				},
+				"hasRole(bytes32,address)": {
+					"details": "Returns `true` if `account` has been granted `role`."
+				},
+				"paused()": {
+					"details": "Returns true if the contract is paused, and false otherwise."
+				},
+				"renounceRole(bytes32,address)": {
+					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `callerConfirmation`. May emit a {RoleRevoked} event."
+				},
+				"revokeRole(bytes32,address)": {
+					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
+				},
+				"submitScore(address,uint8)": {
+					"details": "Restricted to ORACLE_ROLE. Reverts with `InvalidSafetyScore` if      `score` exceeds 100. Overwrites any previous score for `driver` —      only the latest score is kept on-chain, consistent with the      \"minimum verifiable state\" scope; full score history, if needed,      is the backend's responsibility to log off-chain.",
+					"params": {
+						"driver": "The driver wallet the score applies to.",
+						"score": "The new safety score, in the range 0-100."
+					}
+				},
+				"supportsInterface(bytes4)": {
+					"details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+				}
+			},
+			"stateVariables": {
+				"latestScore": {
+					"details": "Public mapping auto-generates a `latestScore(address) view      returns (uint8)` getter, satisfying the \"store only this      mapping\" requirement without a redundant wrapper function."
+				}
+			},
+			"title": "SafetyScoreOracle",
+			"version": 1
+		},
+		"userdoc": {
+			"errors": {
+				"InvalidSafetyScore(uint8)": [
+					{
+						"notice": "Thrown when a submitted safety score is outside the valid 0-100 range."
+					}
+				],
+				"ZeroAddress()": [
+					{
+						"notice": "Thrown when a zero address is passed where a non-zero address is required."
+					}
+				]
+			},
+			"events": {
+				"EmergencyPaused(address)": {
+					"notice": "Emitted when a contract is paused in response to an emergency."
+				},
+				"EmergencyUnpaused(address)": {
+					"notice": "Emitted when a contract is unpaused, resuming normal operations."
+				},
+				"SafetyScoreUpdated(address,uint8)": {
+					"notice": "Emitted when the oracle submits an updated safety score for a driver."
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"ORACLE_ROLE()": {
+					"notice": "Allowed to submit AI-generated safety scores. Held by the         off-chain oracle backend wallet(s)."
+				},
+				"PAUSER_ROLE()": {
+					"notice": "Allowed to pause/unpause this contract in an emergency."
+				},
+				"latestScore(address)": {
+					"notice": "driver wallet => most recent verified safety score (0-100)."
+				},
+				"pause()": {
+					"notice": "Pauses score submission on this contract."
+				},
+				"submitScore(address,uint8)": {
+					"notice": "Submits a new AI-generated safety score for a driver."
+				},
+				"unpause()": {
+					"notice": "Resumes normal operation after a pause."
+				}
+			},
+			"notice": "Stores the latest AI-generated driver safety score, submitted by         a trusted off-chain oracle backend. Performs NO score computation         on-chain — it is a verified-value store, nothing more.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/SafetyScoreOracle.sol": "SafetyScoreOracle"
+		},
+		"evmVersion": "osaka",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts/access/AccessControl.sol": {
+			"keccak256": "0x4686ec784d75f95beaf2bf5b5f26e5f946d4c864aaee9c3c62bdc18381f5e017",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://26710ca191913f3c9df542079c4a6dcff02968e92d4f7357daefef9fbe72a19c",
+				"dweb:/ipfs/QmanHbeWuBbVEqXySHa1zhm2rExjYpChDBubBaJNTCa2JB"
+			]
+		},
+		"@openzeppelin/contracts/access/IAccessControl.sol": {
+			"keccak256": "0xbff9f59c84e5337689161ce7641c0ef8e872d6a7536fbc1f5133f128887aba3c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b308f882e796f7b79c9502deacb0a62983035c6f6f4e962b319ba6a1f4a77d3d",
+				"dweb:/ipfs/QmaWCW7ahEQqFjwhSUhV7Ae7WhfNvzSpE7DQ58hvEooqPL"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+				"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+			]
+		},
+		"@openzeppelin/contracts/utils/Pausable.sol": {
+			"keccak256": "0xdb484371dfbb848cb6f5d70464e9ac9b2900e4164ead76bbce4fef0b44bcc68f",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f9d6f6f6600a2bec622f699081b58350873b5e63ce05464d17d674a290bb8a7c",
+				"dweb:/ipfs/QmQKVzSQY1PM3Bid4QhgVVZyx6B4Jx7XgaQzLKHj38vJz8"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/ERC165.sol": {
+			"keccak256": "0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://81233d1f98060113d9922180bb0f14f8335856fe9f339134b09335e9f678c377",
+				"dweb:/ipfs/QmWh6R35SarhAn4z2wH8SU456jJSYL2FgucfTFgbHJJN4E"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/IERC165.sol": {
+			"keccak256": "0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617",
+				"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
+			]
+		},
+		"contracts/SafetyScoreOracle.sol": {
+			"keccak256": "0x9823f817d545bcd5ee7b142ffcb59ea5e798719e11c22bdef715f5f500cb9705",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://55e5f3357008dabd2d91c81e8b0774d07920de55127696381cec72e4c448bc7d",
+				"dweb:/ipfs/QmZqNqXyqBuLfQxNtJGQjYa47uCFKza5reGFzQporwJ2ur"
+			]
+		},
+		"contracts/libraries/InsuranceErrors.sol": {
+			"keccak256": "0xd4d5b0f0942ad148952b3f6926e8320beec90666803e3c71fca3b0e3210aaa81",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://83016919bf7471592df376698c9021a5b01f7d68594e851cb98786c2f4c56c51",
+				"dweb:/ipfs/QmcefYYpnA7p7KT9QUaBBxkB3BWsMNWiDP5Fcq2diCeabj"
+			]
+		},
+		"contracts/libraries/InsuranceEvents.sol": {
+			"keccak256": "0x849ac9f76fdacbb9e6124ecb517636035d084afce7e0c5e1a96839e2f1b8e65d",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://30a20c9196d4242235d4d074a3216907bcdc1ff09e478da56def317ce185782b",
+				"dweb:/ipfs/QmZMkV9iD6xJXh91JNYxFPepgGfgANLrJtM5ggcdrN3v76"
+			]
+		}
+	},
+	"version": 1
+}
