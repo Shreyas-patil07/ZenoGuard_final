@@ -15,6 +15,7 @@ class Rider(Base):
     kyc_status = Column(String, default="pending")
     wallet_balance = Column(Float, default=0.0)
     upi_id = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
     bank_account = Column(String, nullable=True)
     bank_ifsc = Column(String, nullable=True)
     bank_name = Column(String, nullable=True)
