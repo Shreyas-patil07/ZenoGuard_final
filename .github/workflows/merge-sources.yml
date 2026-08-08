@@ -1,0 +1,22 @@
+name: Merge ZenoGuard Sources
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  merge-sources:
+    if: "!contains(github.event.head_commit.message, '[skip merge]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone source repositories
+        run: |
+          git clone --depth 1
