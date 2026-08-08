@@ -1,9 +1,17 @@
 """Apply incremental schema changes for an existing PostgreSQL ZenoGuard database."""
 
+import sys
+from pathlib import Path
+
+# Allow `python scripts/migrate_postgres.py` from the backend directory.
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 from sqlalchemy import inspect, text
 
-from app.database import Base, engine
 from app import models  # noqa: F401 - registers all ORM models with Base
+from app.database import Base, engine
 
 
 COLUMN_MIGRATIONS = {
@@ -36,9 +44,7 @@ def migrate() -> None:
             "Use migrate_razorpay.py only for legacy SQLite databases."
         )
 
-    # Create tables that do not exist yet. This does not alter existing tables.
     Base.metadata.create_all(bind=engine)
-
     inspector = inspect(engine)
 
     with engine.begin() as connection:
