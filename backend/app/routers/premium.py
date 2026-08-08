@@ -1,5 +1,5 @@
 import datetime
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -49,17 +49,18 @@ def get_active_policy(db: Session = Depends(get_db), current_user=Depends(get_cu
 def calculate_premium(tier: str = "standard", duration_days: int = 30, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     tier = tier.lower()
     if tier not in COVERAGE_TIERS or duration_days not in DURATION_FACTORS:
-        raise ValueError("Tier must be basic, standard, or plus; duration must be 7, 30, or 90 days")
+        raise HTTPException(status_code=400, detail="Tier must be basic, standard, or plus; duration must be 7, 30, or 90 days")
     earnings = db.query(EarningsLog).filter(EarningsLog.rider_id == current_user.id).order_by(EarningsLog.date.desc()).first()
     if not earnings:
         earnings = EarningsLog(rider_id=current_user.id, income=0.0, hours_worked=8.0)
         prefix = "Default rate (no earnings logged yet) — "
     else:
         prefix = ""
-    daily_premium, risk_score, explanation, tier_info = calculate_premium_from_earnings(earnings, tier=tier, duration_days=duration_days)
+    daily_premium, risk_score, explanation, tier_info, ml_premium = calculate_premium_from_earnings(earnings, tier=tier, duration_days=duration_days)
     return {
         "premium": daily_premium, "total_premium": round(daily_premium * duration_days, 2), "duration_days": duration_days,
-        "tier": tier, "tier_label": tier_info["label"], "risk_score": risk_score, "explanation": prefix + explanation,
+        "tier": tier, "tier_label": tier_info["label"], "risk_score": risk_score,
+        "ml_premium_signal": ml_premium, "explanation": prefix + explanation,
         "coverage": {"accident": tier_info["accident"], "breakdown": tier_info["breakdown"], "weather": tier_info["weather"]},
         "earnings_used": earnings.income, "note": "[Prototype Assumption] — not IRDAI-approved rates",
     }
@@ -71,11 +72,11 @@ def activate_policy(payload: PremiumRequest, db: Session = Depends(get_db), curr
         return {"message": "You already have an active policy.", "policy": _policy_dict(existing)}
     tier = (payload.tier or "standard").lower(); duration = payload.duration_days or 30
     if tier not in COVERAGE_TIERS or duration not in DURATION_FACTORS:
-        raise ValueError("Tier must be basic, standard, or plus; duration must be 7, 30, or 90 days")
+        raise HTTPException(status_code=400, detail="Tier must be basic, standard, or plus; duration must be 7, 30, or 90 days")
     earnings = db.query(EarningsLog).filter(EarningsLog.rider_id == current_user.id).order_by(EarningsLog.date.desc()).first()
     if not earnings:
         earnings = EarningsLog(rider_id=current_user.id, income=0.0, hours_worked=8.0)
-    daily_premium, risk_score, _, _ = calculate_premium_from_earnings(earnings, tier=tier, duration_days=duration)
+    daily_premium, risk_score, _, _, _ = calculate_premium_from_earnings(earnings, tier=tier, duration_days=duration)
     now = datetime.datetime.utcnow()
     policy = Policy(rider_id=current_user.id, premium=daily_premium, risk_score=risk_score, active=True, locked=True, tier=tier, duration_days=duration, start_date=now, end_date=now + datetime.timedelta(days=duration))
     db.add(policy); db.commit(); db.refresh(policy)
