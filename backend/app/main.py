@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import auth, kyc, wallet, company, earnings, premium, claims, contract, ml, upload, sessions
+from .routers import auth, kyc, wallet, company, earnings, premium, claims, contract, ml, upload, sessions, payments, webhooks
 from .health import router as health_router
 
 Base.metadata.create_all(bind=engine)
@@ -27,6 +27,8 @@ app.include_router(wallet.router)
 app.include_router(company.router)
 app.include_router(earnings.router)
 app.include_router(premium.router)
+app.include_router(payments.router)
+app.include_router(webhooks.router)
 app.include_router(claims.router)
 app.include_router(contract.router)
 app.include_router(ml.router)
