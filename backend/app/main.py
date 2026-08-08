@@ -1,0 +1,32 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .database import engine, Base
+from .routers import auth, kyc, wallet, company, earnings, premium, claims, contract
+
+# Create the database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="ZenoGuard API")
+
+# Configure CORS for frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(auth.router)
+app.include_router(kyc.router)
+app.include_router(wallet.router)
+app.include_router(company.router)
+app.include_router(earnings.router)
+app.include_router(premium.router)
+app.include_router(claims.router)
+app.include_router(contract.router)
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to ZenoGuard API"}
