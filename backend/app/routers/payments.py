@@ -42,27 +42,69 @@ def _activate_policy_after_blockchain(db: Session, payment: Payment) -> Policy:
     db.refresh(policy)
     return policy
 
-
 def _sync_policy_to_blockchain(db: Session, payment: Payment) -> dict:
     policy = payment.policy
+
     if not policy:
         raise RuntimeError("Payment has no linked policy")
+
     if policy.blockchain_policy_id:
-        return {"policy_id": policy.blockchain_policy_id, "tx_hash": policy.purchase_tx_hash, "blockchain_status": policy.blockchain_status}
-    result = web3_gateway.purchase_policy_for(
-        rider_id=policy.rider_id,
-        wallet_address=policy.rider.wallet_address if policy.rider else None,
+        return {
+            "policy_id": policy.blockchain_policy_id,
+            "tx_hash": policy.purchase_tx_hash,
+            "blockchain_status": policy.blockchain_status,
+        }
+
+    wallet = policy.rider.wallet_address if policy.rider else None
+
+    if not wallet:
+        raise RuntimeError(
+            "Rider wallet address is required for blockchain synchronization"
+        )
+
+    existing = web3_gateway.find_existing_policy_for_driver(
+        wallet_address=wallet,
         premium_inr=float(payment.amount_inr),
         coverage_inr=_blockchain_coverage(policy),
         duration_days=policy.duration_days,
     )
+
+    if existing:
+        policy.blockchain_policy_id = existing["policy_id"]
+        policy.purchase_tx_hash = existing.get("tx_hash")
+        policy.blockchain_status = "CONFIRMED"
+
+        db.commit()
+        db.refresh(policy)
+
+        return {
+            "policy_id": existing["policy_id"],
+            "tx_hash": existing.get("tx_hash"),
+            "blockchain_status": "CONFIRMED",
+            "driver": existing["driver"],
+        }
+
+    result = web3_gateway.purchase_policy_for(
+        rider_id=policy.rider_id,
+        wallet_address=wallet,
+        premium_inr=float(payment.amount_inr),
+        coverage_inr=_blockchain_coverage(policy),
+        duration_days=policy.duration_days,
+    )
+
     policy.blockchain_policy_id = result["policy_id"]
     policy.purchase_tx_hash = result["tx_hash"]
     policy.blockchain_status = "CONFIRMED"
+
     db.commit()
     db.refresh(policy)
-    return {"policy_id": result["policy_id"], "tx_hash": result["tx_hash"], "blockchain_status": "CONFIRMED", "driver": result["driver"]}
 
+    return {
+        "policy_id": result["policy_id"],
+        "tx_hash": result["tx_hash"],
+        "blockchain_status": "CONFIRMED",
+        "driver": result["driver"],
+    }
 
 @router.post("/premium/order")
 def create_premium_order(payload: PremiumOrderRequest, db: Session = Depends(get_db), current_user: Rider = Depends(get_current_user)):

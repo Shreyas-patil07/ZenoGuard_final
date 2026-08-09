@@ -133,6 +133,82 @@ def build_policy_purchase(wallet: str, premium_wei: int, coverage_wei: int, dura
     tx = contract.functions.purchasePolicyFor(wallet, premium_wei, coverage_wei, duration_days * 24 * 60 * 60).build_transaction({"from": _require_signer(w3).address, "value": premium_wei, "chainId": w3.eth.chain_id, "nonce": w3.eth.get_transaction_count(_require_signer(w3).address, "pending")})
     return _serialise_tx(tx)
 
+def find_existing_policy_for_driver(
+    wallet_address: str,
+    premium_inr: float,
+    coverage_inr: float,
+    duration_days: int,
+) -> dict[str, Any] | None:
+    if not wallet_address or not Web3.is_address(wallet_address):
+        raise ValueError("Valid wallet address is required")
+
+    if duration_days not in (7, 30, 90):
+        raise ValueError("duration_days must be 7, 30, or 90")
+
+    w3 = _w3()
+
+    if not w3.is_connected():
+        raise RuntimeError("Unable to connect to Ethereum RPC")
+
+    wallet = Web3.to_checksum_address(wallet_address)
+
+    registry = _contract(
+        w3,
+        "driver_registry",
+        DRIVER_REGISTRY_ABI,
+    )
+
+    try:
+        driver = registry.functions.getDriver(wallet).call()
+    except Exception:
+        # Driver is not registered, so there cannot be an existing policy.
+        return None
+
+    policy_id = int(driver[2])
+
+    if policy_id == 0:
+        return None
+
+    policy = get_onchain_policy(policy_id)
+
+    expected_premium = inr_to_wei(premium_inr)
+    expected_coverage = inr_to_wei(coverage_inr)
+
+    if Web3.to_checksum_address(policy["driver"]) != wallet:
+        raise RuntimeError(
+            f"On-chain policy {policy_id} belongs to a different driver"
+        )
+
+    if policy["premium_wei"] != expected_premium:
+        raise RuntimeError(
+            f"Existing policy {policy_id} premium mismatch"
+        )
+
+    if policy["coverage_wei"] != expected_coverage:
+        raise RuntimeError(
+            f"Existing policy {policy_id} coverage mismatch"
+        )
+
+    duration_seconds = policy["expiry_time"] - policy["start_time"]
+    expected_duration = duration_days * 24 * 60 * 60
+
+    if duration_seconds != expected_duration:
+        raise RuntimeError(
+            f"Existing policy {policy_id} duration mismatch"
+        )
+
+    if not policy["active"]:
+        return None
+
+    return {
+        "policy_id": policy_id,
+        "tx_hash": None,
+        "driver": wallet,
+        "premium_wei": policy["premium_wei"],
+        "coverage_wei": policy["coverage_wei"],
+        "start_time": policy["start_time"],
+        "expiry_time": policy["expiry_time"],
+    }
 
 def purchase_policy_for(rider_id: int, wallet_address: str | None, premium_inr: float, coverage_inr: float, duration_days: int) -> dict[str, Any]:
     if duration_days not in (7, 30, 90):
