@@ -1,11 +1,12 @@
+import os
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import RiderProfile
+from ..models import Rider, RiderProfile
 from ..routers.auth import get_current_user
 
 router = APIRouter(prefix="/kyc", tags=["kyc"])
@@ -18,6 +19,11 @@ class ProfileUpdate(BaseModel):
     city: str = Field(min_length=2, max_length=100)
     id_type: str = Field(min_length=2, max_length=40)
     id_number: str = Field(min_length=4, max_length=80)
+
+
+class ReviewDecision(BaseModel):
+    status: str
+    note: str | None = None
 
 
 def _profile(db: Session, rider_id: int) -> RiderProfile:
@@ -95,3 +101,29 @@ def submit_kyc(db: Session = Depends(get_db), current_user=Depends(get_current_u
     db.commit()
     db.refresh(profile)
     return {"message": "Identity verification submitted for review.", "profile": _profile_dict(profile, current_user)}
+
+
+@router.post("/review/{rider_id}")
+def review_kyc(
+    rider_id: int,
+    payload: ReviewDecision,
+    x_kyc_review_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    configured_key = os.getenv("KYC_REVIEW_KEY")
+    if not configured_key or x_kyc_review_key != configured_key:
+        raise HTTPException(status_code=403, detail="KYC review access denied")
+    status = payload.status.lower().strip()
+    if status not in {"verified", "rejected"}:
+        raise HTTPException(status_code=400, detail="Review status must be verified or rejected")
+
+    rider = db.query(Rider).filter(Rider.id == rider_id).first()
+    if not rider:
+        raise HTTPException(status_code=404, detail="Rider not found")
+    profile = _profile(db, rider.id)
+    rider.kyc_status = status
+    profile.reviewed_at = datetime.utcnow()
+    profile.review_note = (payload.note or "").strip() or None
+    db.commit()
+    db.refresh(profile)
+    return {"message": f"Identity marked {status}.", "profile": _profile_dict(profile, rider)}
