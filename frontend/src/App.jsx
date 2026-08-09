@@ -246,42 +246,29 @@ function Claims() {
       const upload=(await api.post('/upload/evidence',body,{headers:{'Content-Type':'multipart/form-data'}})).data;
       setEvidence(upload);
 
-      const evidenceQuality=upload.quality==='good'?0.95:0.65;
-      const ml=(await api.post('/ml/claim-check',{
-        claim_type:form.event_type==='accident'?'Accident':form.event_type==='breakdown'?'Breakdown':'Weather',
-        previous_claims:0,
-        previous_fraud_flags:0,
-        gps_consistency:.92,
-        weather_match:form.event_type==='weather'?.9:.75,
-        activity_consistency:.94,
-        timestamp_consistency:.96,
-        evidence_quality:evidenceQuality,
-        claim_severity:.7,
-        coverage_amount:5000
+      const claim=(await api.post('/claims/submit',{
+        event_type:form.event_type,
+        location:form.location.trim(),
+        screenshot_url:upload.cloudinary_url
       })).data;
-
-      let claim=null;
-      try{
-        claim=(await api.post('/claims/submit',{
-          event_type:form.event_type,
-          location:form.location.trim(),
-          screenshot_url:upload.cloudinary_url
-        })).data;
-      }catch(err){
-        claim={error:err.response?.data?.detail||'Claim record endpoint unavailable'};
-      }
-      setResult({ml,claim});
+      setResult(claim);
     }catch(err){
-      setResult({error:err.response?.data?.detail||'Evidence upload or ML verification failed.'});
+      setResult({error:err.response?.data?.detail||'Evidence upload or claim submission failed.'});
     }finally{setBusy(false);}
   };
+
+  const verification=result?.verification;
+  const claim=result?.claim || result;
+  const blockchain=result?.blockchain;
+  const blockchainStatus=claim?.blockchain_status || blockchain?.blockchain_status;
+  const claimStatus=claim?.verification_status || verification?.status;
 
   return <Shell title="Claim center">
     <div className="split-grid">
       <div className="panel">
         <div className="eyebrow">CLAIM INPUT</div>
         <h2>Tell us what happened</h2>
-        <p className="muted">Upload clear evidence. ZenoGuard stores the image off-chain and uses it as claim evidence.</p>
+        <p className="muted">Upload clear evidence. ZenoGuard stores the image off-chain and verifies the claim through the backend ML and blockchain layers.</p>
         <form className="form-stack" onSubmit={submit}>
           <label>Event type
             <select value={form.event_type} onChange={e=>setForm({...form,event_type:e.target.value})}>
@@ -308,9 +295,11 @@ function Claims() {
         <h2>Claim state</h2>
         {!result?<div className="empty-state"><Clock3/><p>Submit a claim to see evidence quality, ML verification and settlement state.</p></div>:result.error?null:<div className="timeline">
           {evidence&&<div className="timeline-item"><div className="timeline-dot"><CloudUpload/></div><div><b>Evidence stored</b><span>Cloudinary upload completed · {evidence.width}×{evidence.height}px · {evidence.quality}</span></div></div>}
-          <div className="timeline-item"><div className="timeline-dot"><BrainCircuit/></div><div><b>AI claim screening</b><span>Fraud probability: {((result.ml?.fraud_probability||0)*100).toFixed(1)}% · {result.ml?.decision||'—'}</span></div></div>
-          <div className="timeline-item"><div className="timeline-dot"><CheckCircle2/></div><div><b>Backend claim record</b><span>{result.claim?.claim_id?`Claim #${result.claim.claim_id}`:'Claim record pending'} · {result.claim?.verification_status||'pending'}</span></div></div>
-          {result.ml?.decision==='VALID'&&<div className="tx-box"><BadgeCheck size={16}/> Claim is eligible for the blockchain verification step.</div>}
+          <div className="timeline-item"><div className="timeline-dot"><BrainCircuit/></div><div><b>AI claim screening</b><span>{verification?.reason || 'Backend ML verification completed.'}{verification?.fraud_probability != null ? ` · Fraud probability ${(verification.fraud_probability*100).toFixed(1)}%` : ''}</span></div></div>
+          <div className="timeline-item"><div className="timeline-dot"><CheckCircle2/></div><div><b>Backend claim record</b><span>{claim?.claim_id?`Claim #${claim.claim_id}`:'Claim record pending'} · {claimStatus||'pending'}</span></div></div>
+          {blockchainStatus&&<div className="timeline-item"><div className="timeline-dot"><BadgeCheck/></div><div><b>Blockchain verification</b><span>{blockchainStatus}{blockchain?.claim_id ? ` · On-chain claim #${blockchain.claim_id}` : ''}</span></div></div>}
+          {claim?.payout&&<div className="timeline-item"><div className="timeline-dot"><IndianRupee/></div><div><b>Payout</b><span>₹{Number(claim.payout.amount||0).toFixed(2)} · {claim.payout.status}{claim.payout.tx_id ? ` · ${claim.payout.tx_id}` : ''}</span></div></div>}
+          {result.message&&<div className="tx-box"><CheckCircle2 size={16}/> {result.message}</div>}
           {evidence?.cloudinary_url&&<a className="secondary-btn" href={evidence.cloudinary_url} target="_blank" rel="noreferrer">View uploaded evidence <ArrowUpRight size={16}/></a>}
         </div>}
       </div>
