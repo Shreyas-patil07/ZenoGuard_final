@@ -1,7 +1,97 @@
-from fastapi import APIRouter
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+from ..database import get_db
+from ..models import RiderProfile
+from ..routers.auth import get_current_user
 
 router = APIRouter(prefix="/kyc", tags=["kyc"])
 
-@router.post("/upload")
-def upload_kyc():
-    return {"message": "KYC upload placeholder"}
+
+class ProfileUpdate(BaseModel):
+    phone: str = Field(min_length=10, max_length=20)
+    date_of_birth: str = Field(min_length=8, max_length=20)
+    address: str = Field(min_length=3, max_length=250)
+    city: str = Field(min_length=2, max_length=100)
+    id_type: str = Field(min_length=2, max_length=40)
+    id_number: str = Field(min_length=4, max_length=80)
+
+
+def _profile(db: Session, rider_id: int) -> RiderProfile:
+    profile = db.query(RiderProfile).filter(RiderProfile.rider_id == rider_id).first()
+    if not profile:
+        profile = RiderProfile(rider_id=rider_id)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    return profile
+
+
+def _profile_dict(profile: RiderProfile, rider) -> dict:
+    return {
+        "name": rider.name,
+        "email": rider.email,
+        "phone": profile.phone,
+        "date_of_birth": profile.date_of_birth,
+        "address": profile.address,
+        "city": profile.city,
+        "id_type": profile.id_type,
+        "id_number_masked": f"{'*' * max(0, len(profile.id_number or '') - 4)}{(profile.id_number or '')[-4:]}" if profile.id_number else None,
+        "id_document_url": profile.id_document_url,
+        "selfie_url": profile.selfie_url,
+        "kyc_status": rider.kyc_status or "unverified",
+        "submitted_at": profile.submitted_at.isoformat() if profile.submitted_at else None,
+        "reviewed_at": profile.reviewed_at.isoformat() if profile.reviewed_at else None,
+        "review_note": profile.review_note,
+    }
+
+
+@router.get("/profile")
+def get_profile(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    profile = _profile(db, current_user.id)
+    return _profile_dict(profile, current_user)
+
+
+@router.put("/profile")
+def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if (current_user.kyc_status or "unverified").lower() in {"verified", "under_review"}:
+        raise HTTPException(status_code=409, detail="Verified or submitted identity details cannot be edited. Contact support if they are incorrect.")
+
+    profile = _profile(db, current_user.id)
+    profile.phone = payload.phone.strip()
+    profile.date_of_birth = payload.date_of_birth.strip()
+    profile.address = payload.address.strip()
+    profile.city = payload.city.strip()
+    profile.id_type = payload.id_type.strip().lower()
+    profile.id_number = payload.id_number.strip()
+    db.commit()
+    db.refresh(profile)
+    return {"message": "Profile saved.", "profile": _profile_dict(profile, current_user)}
+
+
+@router.post("/submit")
+def submit_kyc(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    profile = _profile(db, current_user.id)
+    missing = []
+    for field in ("phone", "date_of_birth", "address", "city", "id_type", "id_number", "id_document_url", "selfie_url"):
+        if not getattr(profile, field, None):
+            missing.append(field)
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Complete your profile and upload both identity documents before submitting. Missing: {', '.join(missing)}")
+
+    current_status = (current_user.kyc_status or "unverified").lower()
+    if current_status == "verified":
+        return {"message": "Identity is already verified.", "profile": _profile_dict(profile, current_user)}
+    if current_status == "under_review":
+        return {"message": "Identity verification is already under review.", "profile": _profile_dict(profile, current_user)}
+
+    current_user.kyc_status = "under_review"
+    profile.submitted_at = datetime.utcnow()
+    profile.reviewed_at = None
+    profile.review_note = None
+    db.commit()
+    db.refresh(profile)
+    return {"message": "Identity verification submitted for review.", "profile": _profile_dict(profile, current_user)}
