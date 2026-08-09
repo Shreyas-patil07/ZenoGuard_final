@@ -39,9 +39,19 @@ class RiderProfile(Base):
     date_of_birth = Column(String, nullable=True)
     address = Column(String, nullable=True)
     city = Column(String, nullable=True)
+
+    # Legacy identity fields are retained for compatibility. id_type/id_number now
+    # represent the mandatory driving licence after automated verification.
     id_type = Column(String, nullable=True)
     id_number = Column(String, nullable=True)
     id_document_url = Column(String, nullable=True)
+
+    # One additional government ID is required: Aadhaar OR PAN.
+    secondary_id_type = Column(String, nullable=True)
+    secondary_id_number = Column(String, nullable=True)
+    secondary_id_document_url = Column(String, nullable=True)
+
+    # Kept for backward compatibility; selfie is no longer part of KYC requirements.
     selfie_url = Column(String, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
@@ -84,7 +94,6 @@ class Policy(Base):
     duration_days = Column(Integer, default=30)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
-
     blockchain_policy_id = Column(Integer, nullable=True, index=True)
     purchase_tx_hash = Column(String, nullable=True, unique=True)
     blockchain_status = Column(String, default="NOT_LINKED")
@@ -150,7 +159,6 @@ class Claim(Base):
     location = Column(String)
     verification_status = Column(String, default="pending")
     screenshot_url = Column(String)
-
     blockchain_claim_id = Column(Integer, nullable=True, index=True)
     submit_tx_hash = Column(String, nullable=True, unique=True)
     payout_tx_hash = Column(String, nullable=True)
