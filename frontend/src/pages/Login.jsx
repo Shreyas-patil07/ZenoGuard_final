@@ -3,6 +3,8 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
@@ -18,7 +20,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8000/auth/login', formData);
+      const response = await axios.post(`${API_URL}/auth/login`, formData);
       const token = response?.data?.access_token;
 
       if (!token) {
