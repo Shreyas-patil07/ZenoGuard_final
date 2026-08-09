@@ -6,7 +6,6 @@ from .database import Base
 
 class Rider(Base):
     __tablename__ = "riders"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
@@ -21,7 +20,6 @@ class Rider(Base):
     bank_name = Column(String, nullable=True)
     razorpay_contact_id = Column(String, nullable=True, unique=True)
     razorpay_fund_account_id = Column(String, nullable=True, unique=True)
-
     profile = relationship("RiderProfile", back_populates="rider", uselist=False, cascade="all, delete-orphan")
     policies = relationship("Policy", back_populates="rider")
     earnings = relationship("EarningsLog", back_populates="rider")
@@ -32,26 +30,24 @@ class Rider(Base):
 
 class RiderProfile(Base):
     __tablename__ = "rider_profiles"
-
     id = Column(Integer, primary_key=True, index=True)
     rider_id = Column(Integer, ForeignKey("riders.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
     phone = Column(String, nullable=True)
     date_of_birth = Column(String, nullable=True)
     address = Column(String, nullable=True)
     city = Column(String, nullable=True)
-
-    # Legacy identity fields are retained for compatibility. id_type/id_number now
-    # represent the mandatory driving licence after automated verification.
     id_type = Column(String, nullable=True)
     id_number = Column(String, nullable=True)
     id_document_url = Column(String, nullable=True)
-
-    # One additional government ID is required: Aadhaar OR PAN.
     secondary_id_type = Column(String, nullable=True)
     secondary_id_number = Column(String, nullable=True)
     secondary_id_document_url = Column(String, nullable=True)
-
-    # Kept for backward compatibility; selfie is no longer part of KYC requirements.
+    secondary_ai_document_status = Column(String, default="pending")
+    secondary_ai_document_confidence = Column(Float, nullable=True)
+    secondary_ai_document_type = Column(String, nullable=True)
+    secondary_ai_extracted_name = Column(String, nullable=True)
+    secondary_ai_extracted_id_number = Column(String, nullable=True)
+    secondary_ai_verification_note = Column(String, nullable=True)
     selfie_url = Column(String, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
@@ -63,13 +59,11 @@ class RiderProfile(Base):
     ai_extracted_dob = Column(String, nullable=True)
     ai_extracted_id_number = Column(String, nullable=True)
     ai_verification_note = Column(String, nullable=True)
-
     rider = relationship("Rider", back_populates="profile")
 
 
 class WalletTransaction(Base):
     __tablename__ = "wallet_transactions"
-
     id = Column(Integer, primary_key=True, index=True)
     rider_id = Column(Integer, ForeignKey("riders.id"))
     amount = Column(Float)
@@ -83,7 +77,6 @@ class WalletTransaction(Base):
 
 class Policy(Base):
     __tablename__ = "policies"
-
     id = Column(Integer, primary_key=True, index=True)
     rider_id = Column(Integer, ForeignKey("riders.id"))
     premium = Column(Float)
@@ -97,7 +90,6 @@ class Policy(Base):
     blockchain_policy_id = Column(Integer, nullable=True, index=True)
     purchase_tx_hash = Column(String, nullable=True, unique=True)
     blockchain_status = Column(String, default="NOT_LINKED")
-
     rider = relationship("Rider", back_populates="policies")
     claims = relationship("Claim", back_populates="policy")
     payments = relationship("Payment", back_populates="policy")
@@ -105,7 +97,6 @@ class Policy(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
-
     id = Column(Integer, primary_key=True, index=True)
     rider_id = Column(Integer, ForeignKey("riders.id"), nullable=False)
     policy_id = Column(Integer, ForeignKey("policies.id"), nullable=True)
@@ -120,14 +111,12 @@ class Payment(Base):
     failure_reason = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
-
     rider = relationship("Rider", back_populates="payments")
     policy = relationship("Policy", back_populates="payments")
 
 
 class EarningsLog(Base):
     __tablename__ = "earnings_logs"
-
     id = Column(Integer, primary_key=True, index=True)
     rider_id = Column(Integer, ForeignKey("riders.id"))
     date = Column(DateTime, default=datetime.datetime.utcnow)
@@ -138,7 +127,6 @@ class EarningsLog(Base):
 
 class WorkSession(Base):
     __tablename__ = "work_sessions"
-
     id = Column(Integer, primary_key=True, index=True)
     rider_id = Column(Integer, ForeignKey("riders.id"), nullable=False)
     started_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
@@ -151,7 +139,6 @@ class WorkSession(Base):
 
 class Claim(Base):
     __tablename__ = "claims"
-
     id = Column(Integer, primary_key=True, index=True)
     policy_id = Column(Integer, ForeignKey("policies.id"))
     event_type = Column(String)
@@ -163,14 +150,12 @@ class Claim(Base):
     submit_tx_hash = Column(String, nullable=True, unique=True)
     payout_tx_hash = Column(String, nullable=True)
     blockchain_status = Column(String, default="NOT_LINKED")
-
     policy = relationship("Policy", back_populates="claims")
     payout = relationship("Payout", back_populates="claim", uselist=False)
 
 
 class Payout(Base):
     __tablename__ = "payouts"
-
     id = Column(Integer, primary_key=True, index=True)
     claim_id = Column(Integer, ForeignKey("claims.id"))
     amount = Column(Float)
