@@ -36,9 +36,11 @@ class RiderProfile(Base):
     date_of_birth = Column(String, nullable=True)
     address = Column(String, nullable=True)
     city = Column(String, nullable=True)
+
     id_type = Column(String, nullable=True)
     id_number = Column(String, nullable=True)
     id_document_url = Column(String, nullable=True)
+
     secondary_id_type = Column(String, nullable=True)
     secondary_id_number = Column(String, nullable=True)
     secondary_id_document_url = Column(String, nullable=True)
@@ -48,6 +50,17 @@ class RiderProfile(Base):
     secondary_ai_extracted_name = Column(String, nullable=True)
     secondary_ai_extracted_id_number = Column(String, nullable=True)
     secondary_ai_verification_note = Column(String, nullable=True)
+
+    tertiary_id_type = Column(String, nullable=True)
+    tertiary_id_number = Column(String, nullable=True)
+    tertiary_id_document_url = Column(String, nullable=True)
+    tertiary_ai_document_status = Column(String, default="pending")
+    tertiary_ai_document_confidence = Column(Float, nullable=True)
+    tertiary_ai_document_type = Column(String, nullable=True)
+    tertiary_ai_extracted_name = Column(String, nullable=True)
+    tertiary_ai_extracted_id_number = Column(String, nullable=True)
+    tertiary_ai_verification_note = Column(String, nullable=True)
+
     selfie_url = Column(String, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
@@ -112,7 +125,7 @@ class Payment(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
     rider = relationship("Rider", back_populates="payments")
-    policy = relationship("Policy", back_populates="payments")
+    policy = relationship("Policy", back_populates="policy") if False else relationship("Policy", back_populates="payments")
 
 
 class EarningsLog(Base):
