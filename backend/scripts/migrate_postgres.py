@@ -3,14 +3,13 @@
 import sys
 from pathlib import Path
 
-# Allow `python scripts/migrate_postgres.py` from the backend directory.
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from sqlalchemy import inspect, text
 
-from app import models  # noqa: F401 - registers all ORM models with Base
+from app import models  # noqa: F401
 from app.database import Base, engine
 
 
@@ -34,15 +33,21 @@ COLUMN_MIGRATIONS = {
     "payouts": {
         "status": "TEXT NOT NULL DEFAULT 'PENDING'",
     },
+    "rider_profiles": {
+        "ai_document_status": "TEXT DEFAULT 'pending'",
+        "ai_document_confidence": "DOUBLE PRECISION",
+        "ai_document_type": "TEXT",
+        "ai_extracted_name": "TEXT",
+        "ai_extracted_dob": "TEXT",
+        "ai_extracted_id_number": "TEXT",
+        "ai_verification_note": "TEXT",
+    },
 }
 
 
 def migrate() -> None:
     if engine.dialect.name != "postgresql":
-        raise RuntimeError(
-            f"Expected PostgreSQL, but SQLAlchemy detected '{engine.dialect.name}'. "
-            "Use migrate_razorpay.py only for legacy SQLite databases."
-        )
+        raise RuntimeError(f"Expected PostgreSQL, but SQLAlchemy detected '{engine.dialect.name}'.")
 
     Base.metadata.create_all(bind=engine)
     inspector = inspect(engine)
@@ -50,25 +55,16 @@ def migrate() -> None:
     with engine.begin() as connection:
         for table_name, columns in COLUMN_MIGRATIONS.items():
             if not inspector.has_table(table_name):
-                raise RuntimeError(
-                    f"Required table '{table_name}' does not exist after create_all()."
-                )
+                raise RuntimeError(f"Required table '{table_name}' does not exist after create_all().")
 
             existing = {column["name"] for column in inspector.get_columns(table_name)}
-
             for column_name, definition in columns.items():
                 if column_name in existing:
                     continue
-
-                connection.execute(
-                    text(
-                        f'ALTER TABLE "{table_name}" '
-                        f'ADD COLUMN "{column_name}" {definition}'
-                    )
-                )
+                connection.execute(text(f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {definition}'))
                 print(f"Added {table_name}.{column_name}")
 
-    print("PostgreSQL Razorpay/blockchain migration complete.")
+    print("PostgreSQL incremental migration complete.")
 
 
 if __name__ == "__main__":
