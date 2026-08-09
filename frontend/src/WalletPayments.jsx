@@ -186,7 +186,50 @@ export default function WalletPayments({ Shell }) {
     {(message || error) && <div className={error ? 'alert error' : 'notice'}>{error || message}</div>}
 
     {!active && <div className="split-grid">
-      <div className="panel"><div className="eyebrow">PREMIUM</div><h2>Choose your protection</h2><div className="platform-grid">{tierEntries.map(([key,item]) => <button key={key} type="button" className={`platform-card ${selectedTier === key ? 'selected' : ''}`} onClick={() => setSelectedTier(key)}><ShieldCheck/><b>{item.label}</b><span>Accident ₹{Number(item.accident).toLocaleString('en-IN')} · Weather ₹{Number(item.weather).toLocaleString('en-IN')}</span><small>Base ₹{Number(item.base_premium).toFixed(2)}/day</small></button>)}</div><label>Duration<select value={duration} onChange={e=>setDuration(Number(e.target.value))}>{(tiers?.durations || [7,30,90]).map(d=><option key={d} value={d}>{d} days</option>)}</select></label>{quote&&<div className="info-row"><IndianRupee size={20}/><div><b>₹{Number(quote.total_premium).toFixed(2)} total</b><span>₹{Number(quote.premium).toFixed(2)} per day · Risk {quote.risk_score}</span></div></div>}<button className="primary-btn submit" disabled={busy === 'premium'} onClick={activateAndPay}>{busy === 'premium' ? 'Opening Razorpay...' : 'Pay premium with Razorpay'} <ArrowRight size={17}/></button><small className="muted">UPI, cards and other methods shown by Razorpay Checkout. Test-mode keys are required for testing.</small></div>
+      <div className="panel">
+        <div className="eyebrow">PREMIUM</div>
+        <h2>Choose your protection</h2>
+        <div className="platform-grid">
+          {tierEntries.map(([key, item]) => (
+            <button key={key} type="button" className={`platform-card ${selectedTier === key ? 'selected' : ''}`} onClick={() => setSelectedTier(key)}>
+              <ShieldCheck/>
+              <b>{item.label}</b>
+              <span>Accident ₹{Number(item.accident).toLocaleString('en-IN')} · Weather ₹{Number(item.weather).toLocaleString('en-IN')}</span>
+              <small>Base ₹{Number(item.base_premium).toFixed(2)}/day</small>
+            </button>
+          ))}
+        </div>
+
+        <div className="duration-picker">
+          <span className="duration-label">Duration</span>
+          <div className="duration-pills">
+            {(tiers?.durations || [7, 30, 90]).map(d => (
+              <button
+                key={d}
+                type="button"
+                className={`duration-pill${duration === d ? ' active' : ''}`}
+                onClick={() => setDuration(d)}
+              >
+                {d} days
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {quote && (
+          <div className="info-row">
+            <IndianRupee size={20}/>
+            <div>
+              <b>₹{Number(quote.total_premium).toFixed(2)} total</b>
+              <span>₹{Number(quote.premium).toFixed(2)} per day · Risk {quote.risk_score}</span>
+            </div>
+          </div>
+        )}
+        <button className="primary-btn submit" disabled={busy === 'premium'} onClick={activateAndPay}>
+          {busy === 'premium' ? 'Opening Razorpay...' : 'Pay premium with Razorpay'} <ArrowRight size={17}/>
+        </button>
+        <small className="muted">UPI, cards and other methods shown by Razorpay Checkout. Test-mode keys are required for testing.</small>
+      </div>
       <div className="panel"><div className="eyebrow">PAYMENT FLOW</div><h2>How activation works</h2><div className="timeline"><div className="timeline-item"><div className="timeline-dot"><ShieldCheck/></div><div><b>1. Create policy</b><span>Premium and coverage are calculated by the backend risk engine.</span></div></div><div className="timeline-item"><div className="timeline-dot"><IndianRupee/></div><div><b>2. Razorpay Checkout</b><span>Payment is created server-side; the browser never signs the order.</span></div></div><div className="timeline-item"><div className="timeline-dot"><CheckCircle2/></div><div><b>3. Verify payment</b><span>Backend validates the Razorpay signature, amount and order.</span></div></div><div className="timeline-item"><div className="timeline-dot"><ShieldCheck/></div><div><b>4. Policy becomes active</b><span>Only after successful verification does coverage become active.</span></div></div></div></div>
     </div>}
 
