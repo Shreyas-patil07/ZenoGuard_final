@@ -1,9 +1,19 @@
 import os
 import re
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
-from PIL import Image
+
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
 ROBOFLOW_API_URL = "https://serverless.roboflow.com"
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_MODEL_DIR = _REPO_ROOT / "backend" / "models"
+DL_MODEL_PATH = Path(os.getenv("KYC_DL_MODEL_PATH", str(_MODEL_DIR / "dl_detector.pt")))
+AADHAAR_MODEL_PATH = Path(os.getenv("KYC_AADHAAR_MODEL_PATH", str(_MODEL_DIR / "aadhaar_detector.pt")))
+PAN_MODEL_PATH = Path(os.getenv("KYC_PAN_MODEL_PATH", str(_MODEL_DIR / "pan_detector.pt")))
+
 DL_MODEL_ID = os.getenv("ROBOFLOW_DL_MODEL_ID", "indian-driving-licence-reader-rlxel/1")
 AADHAAR_MODEL_ID = os.getenv("ROBOFLOW_AADHAAR_MODEL_ID", "")
 PAN_MODEL_ID = os.getenv("ROBOFLOW_PAN_MODEL_ID", "")
@@ -12,12 +22,71 @@ PAN_MODEL_ID = os.getenv("ROBOFLOW_PAN_MODEL_ID", "")
 def _client():
     api_key = os.getenv("ROBOFLOW_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("ROBOFLOW_API_KEY is not configured.")
+        raise RuntimeError("ROBOFLOW_API_KEY is not configured and local OCR is unavailable.")
     try:
         from inference_sdk import InferenceHTTPClient
     except ImportError as exc:
         raise RuntimeError("inference-sdk is not installed. Run: pip install -r requirements.txt") from exc
     return InferenceHTTPClient(api_url=ROBOFLOW_API_URL, api_key=api_key)
+
+
+@lru_cache(maxsize=3)
+def _local_model(model_path: str):
+    try:
+        from ultralytics import YOLO
+    except ImportError as exc:
+        raise RuntimeError("ultralytics is not installed. Run: pip install -r requirements.txt") from exc
+    return YOLO(model_path)
+
+
+def _model_device():
+    value = os.getenv("KYC_MODEL_DEVICE", "cpu").strip()
+    return int(value) if value.isdigit() else value
+
+
+def _local_predictions(image: Image.Image, model_path: Path) -> list[dict]:
+    if not model_path.exists():
+        return []
+    model = _local_model(str(model_path))
+    result = model.predict(
+        source=image,
+        imgsz=int(os.getenv("KYC_MODEL_IMGSZ", "640")),
+        conf=float(os.getenv("KYC_MODEL_CONF", "0.25")),
+        device=_model_device(),
+        verbose=False,
+    )[0]
+
+    predictions = []
+    names = getattr(result, "names", {}) or getattr(model, "names", {})
+    if result.boxes is None:
+        return predictions
+
+    for box in result.boxes:
+        cls_id = int(box.cls[0].item())
+        x, y, width, height = [float(v) for v in box.xywh[0].tolist()]
+        predictions.append(
+            {
+                "class": str(names.get(cls_id, cls_id)),
+                "confidence": float(box.conf[0].item()),
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+            }
+        )
+    return predictions
+
+
+def _roboflow_predictions(image: Image.Image, model_id: str) -> list[dict]:
+    if not model_id:
+        return []
+    return _predictions(_client().infer(image, model_id=model_id))
+
+
+def _predictions_for(image: Image.Image, model_path: Path, model_id: str) -> list[dict]:
+    if model_path.exists():
+        return _local_predictions(image, model_path)
+    return _roboflow_predictions(image, model_id)
 
 
 def _as_dict(value: Any) -> dict:
@@ -42,9 +111,26 @@ def _normalize_id(value: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", _normalize_text(value))
 
 
-def _ocr_text(client, image: Image.Image) -> str:
-    result = client.ocr_image(inference_input=image)
-    return _normalize_text(_as_dict(result).get("result", ""))
+def _tesseract_ocr(image: Image.Image) -> str:
+    try:
+        import pytesseract
+    except ImportError as exc:
+        raise RuntimeError("pytesseract is not installed. Run: pip install -r requirements.txt") from exc
+
+    image = ImageOps.grayscale(image)
+    image = ImageOps.autocontrast(image)
+    image = image.resize((max(image.width * 2, 800), max(image.height * 2, 200)))
+    image = image.filter(ImageFilter.SHARPEN)
+    image = ImageEnhance.Contrast(image).enhance(1.5)
+    return _normalize_text(pytesseract.image_to_string(image, config="--psm 6"))
+
+
+def _ocr_text(image: Image.Image) -> str:
+    # Keep Roboflow OCR as the preferred OCR backend when its key is configured.
+    if os.getenv("ROBOFLOW_API_KEY", "").strip():
+        result = _client().ocr_image(inference_input=image)
+        return _normalize_text(_as_dict(result).get("result", ""))
+    return _tesseract_ocr(image)
 
 
 def _crop(image: Image.Image, prediction: dict) -> Image.Image | None:
@@ -74,13 +160,13 @@ def _best_predictions(predictions: list[dict], aliases: dict[str, set[str]]) -> 
     return selected
 
 
-def _field_ocr(client, image, predictions, aliases):
+def _field_ocr(image, predictions, aliases):
     selected = _best_predictions(predictions, aliases)
     fields = {}
     for field, prediction in selected.items():
         crop = _crop(image, prediction)
         if crop is not None:
-            fields[field] = {"text": _ocr_text(client, crop), "confidence": round(float(prediction.get("confidence", 0) or 0), 4)}
+            fields[field] = {"text": _ocr_text(crop), "confidence": round(float(prediction.get("confidence", 0) or 0), 4)}
     return fields
 
 
@@ -112,10 +198,9 @@ def _extract_dob(text: str) -> str | None:
 
 
 def verify_driving_license(image: Image.Image, expected_name: str | None = None) -> dict:
-    client = _client()
-    predictions = _predictions(client.infer(image, model_id=DL_MODEL_ID))
-    aliases = {"name": {"name"}, "dl_number": {"dl_number", "driving_license_number", "license_number"}, "dob": {"dob", "date_of_birth"}}
-    fields = _field_ocr(client, image, predictions, aliases)
+    predictions = _predictions_for(image, DL_MODEL_PATH, DL_MODEL_ID)
+    aliases = {"name": {"name"}, "dl_number": {"dl_no", "dl_number", "driving_license_number", "license_number"}, "dob": {"dob", "date_of_birth"}}
+    fields = _field_ocr(image, predictions, aliases)
     extracted_name = fields.get("name", {}).get("text", "")
     extracted_number = _extract_dl_number(fields.get("dl_number", {}).get("text", ""))
     extracted_dob = _extract_dob(fields.get("dob", {}).get("text", ""))
@@ -130,26 +215,28 @@ def verify_driving_license(image: Image.Image, expected_name: str | None = None)
     if not extracted_dob: notes.append("Date of birth could not be read.")
     if name_match is False: notes.append("Document name does not sufficiently match the account name.")
     passed = not missing and number_valid and bool(extracted_dob) and avg >= .55 and name_match is not False
-    return {"document_type": "driving_license", "status": "verified" if passed else "review", "model_id": DL_MODEL_ID, "detection_confidence": round(avg, 4), "fields": {"name": extracted_name or None, "dl_number": extracted_number, "dob": extracted_dob}, "field_confidence": fields, "name_match": name_match, "notes": notes, "authenticity_verified": False}
+    return {"document_type": "driving_license", "status": "verified" if passed else "review", "model_id": str(DL_MODEL_PATH) if DL_MODEL_PATH.exists() else DL_MODEL_ID, "detection_confidence": round(avg, 4), "fields": {"name": extracted_name or None, "dl_number": extracted_number, "dob": extracted_dob}, "field_confidence": fields, "name_match": name_match, "notes": notes, "authenticity_verified": False}
 
 
 def verify_secondary_document(image: Image.Image, document_type: str, expected_name: str | None = None) -> dict:
     document_type = document_type.lower().strip()
-    model_id = AADHAAR_MODEL_ID if document_type == "aadhaar" else PAN_MODEL_ID if document_type == "pan" else ""
-    if not model_id:
-        raise RuntimeError(f"ROBOFLOW_{document_type.upper()}_MODEL_ID is not configured.")
-    client = _client()
-    predictions = _predictions(client.infer(image, model_id=model_id))
-    number_aliases = {"aadhaar": {"aadhaar", "aadhaar_number", "number", "id_number"}, "pan": {"pan", "pan_number", "number", "id_number"}}[document_type]
-    aliases = {"name": {"name", "full_name"}, "id_number": number_aliases}
-    fields = _field_ocr(client, image, predictions, aliases)
+    if document_type == "aadhaar":
+        model_path, model_id = AADHAAR_MODEL_PATH, AADHAAR_MODEL_ID
+        aliases = {"name": {"name", "full_name"}, "id_number": {"aadhar_number", "aadhaar_number", "number", "id_number"}, "fake": {"fake"}}
+    elif document_type == "pan":
+        model_path, model_id = PAN_MODEL_PATH, PAN_MODEL_ID
+        aliases = {"name": {"name", "full_name"}, "id_number": {"pan_number", "pan", "number", "id_number"}, "fake": {"fake"}}
+    else:
+        raise RuntimeError(f"Unsupported secondary document type: {document_type}")
+
+    predictions = _predictions_for(image, model_path, model_id)
+    fields = _field_ocr(image, predictions, {k: v for k, v in aliases.items() if k != "fake"})
+    selected = _best_predictions(predictions, aliases)
+    fake_detected = "fake" in selected
     extracted_name = fields.get("name", {}).get("text", "")
     raw_number = fields.get("id_number", {}).get("text", "")
     compact = _normalize_id(raw_number)
-    if document_type == "aadhaar":
-        match = re.search(r"\d{12}", compact)
-    else:
-        match = re.search(r"[A-Z]{5}\d{4}[A-Z]", compact)
+    match = re.search(r"\d{12}", compact) if document_type == "aadhaar" else re.search(r"[A-Z]{5}\d{4}[A-Z]", compact)
     extracted_number = match.group(0) if match else None
     confidences = [x["confidence"] for x in fields.values()]
     avg = sum(confidences) / len(confidences) if confidences else 0
@@ -157,6 +244,7 @@ def verify_secondary_document(image: Image.Image, document_type: str, expected_n
     notes = []
     if "name" not in fields: notes.append("Name could not be detected.")
     if not extracted_number: notes.append(f"{document_type.upper()} number could not be validated.")
+    if fake_detected: notes.append("The document model detected a fake-document indicator.")
     if name_match is False: notes.append("Document name does not sufficiently match the account name.")
-    passed = "name" in fields and bool(extracted_number) and avg >= .55 and name_match is not False
-    return {"document_type": document_type, "status": "verified" if passed else "review", "model_id": model_id, "detection_confidence": round(avg, 4), "fields": {"name": extracted_name or None, "id_number": extracted_number}, "field_confidence": fields, "name_match": name_match, "notes": notes, "authenticity_verified": False}
+    passed = "name" in fields and bool(extracted_number) and avg >= .55 and name_match is not False and not fake_detected
+    return {"document_type": document_type, "status": "verified" if passed else "review", "model_id": str(model_path) if model_path.exists() else model_id, "detection_confidence": round(avg, 4), "fields": {"name": extracted_name or None, "id_number": extracted_number}, "field_confidence": fields, "name_match": name_match, "notes": notes, "authenticity_verified": False, "fake_indicator_detected": fake_detected}
