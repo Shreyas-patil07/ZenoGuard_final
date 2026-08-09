@@ -7,7 +7,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
-  Bell,
   BrainCircuit,
   CheckCircle2,
   Clock3,
