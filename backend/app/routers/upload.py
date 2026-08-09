@@ -3,7 +3,7 @@ import os
 import cloudinary
 import cloudinary.uploader
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from PIL import Image, ImageFilter, ImageStat
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -15,7 +15,7 @@ cloudinary.config(cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"), api_key=os.gete
 router = APIRouter(prefix="/upload", tags=["upload"])
 MAX_FILE_SIZE = 10 * 1024 * 1024
 ALLOWED = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
-ALLOWED_SECONDARY = {"aadhaar", "pan"}
+DOCUMENT_TYPES = {"driving_license", "aadhaar", "pan"}
 
 
 def _cloudinary_ready():
@@ -65,50 +65,67 @@ async def upload_evidence(file: UploadFile = File(...), current_user=Depends(get
 
 
 @router.post("/kyc-document")
-async def upload_kyc_document(file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def upload_kyc_document(
+    file: UploadFile = File(...),
+    document_type: str = Form(...),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if (current_user.kyc_status or "unverified").lower() in {"verified", "under_review"}:
         raise HTTPException(status_code=409, detail="Identity documents cannot be changed after submission.")
-    result = await _upload(file, f"zenoguard/kyc/{current_user.id}/driving-license")
+
+    document_type = document_type.strip().lower()
+    if document_type not in DOCUMENT_TYPES:
+        raise HTTPException(status_code=422, detail="Choose Driving Licence, Aadhaar, or PAN.")
+
+    result = await _upload(file, f"zenoguard/kyc/{current_user.id}/{document_type}")
     profile = db.query(RiderProfile).filter(RiderProfile.rider_id == current_user.id).first()
     if not profile:
         profile = RiderProfile(rider_id=current_user.id)
         db.add(profile)
-    profile.id_type = "driving_license"
-    profile.id_document_url = result["cloudinary_url"]
-    profile.ai_document_status = "uploaded"
-    profile.ai_document_type = "driving_license"
-    profile.ai_document_confidence = None
-    profile.ai_extracted_name = None
-    profile.ai_extracted_dob = None
-    profile.ai_extracted_id_number = None
-    profile.ai_verification_note = "Saved. AI verification runs only when KYC is submitted."
+
+    if document_type == "driving_license":
+        profile.id_type = "driving_license"
+        profile.id_document_url = result["cloudinary_url"]
+        profile.ai_document_status = "uploaded"
+        profile.ai_document_type = "driving_license"
+        profile.ai_document_confidence = None
+        profile.ai_extracted_name = None
+        profile.ai_extracted_dob = None
+        profile.ai_extracted_id_number = None
+        profile.ai_verification_note = "Saved. Cross-verification runs only when KYC is submitted."
+    elif document_type == "aadhaar":
+        profile.secondary_id_type = "aadhaar"
+        profile.secondary_id_document_url = result["cloudinary_url"]
+        profile.secondary_ai_document_status = "uploaded"
+        profile.secondary_ai_document_type = "aadhaar"
+        profile.secondary_ai_document_confidence = None
+        profile.secondary_ai_extracted_name = None
+        profile.secondary_ai_extracted_id_number = None
+        profile.secondary_ai_verification_note = "Saved. Cross-verification runs only when KYC is submitted."
+    else:
+        profile.tertiary_id_type = "pan"
+        profile.tertiary_id_document_url = result["cloudinary_url"]
+        profile.tertiary_ai_document_status = "uploaded"
+        profile.tertiary_ai_document_type = "pan"
+        profile.tertiary_ai_document_confidence = None
+        profile.tertiary_ai_extracted_name = None
+        profile.tertiary_ai_extracted_id_number = None
+        profile.tertiary_ai_verification_note = "Saved. Cross-verification runs only when KYC is submitted."
+
     db.commit()
     db.refresh(profile)
-    return {"document_type": "driving_license", "uploaded": True, "verification_status": "pending_submit", **result, "message": "Driving licence saved. Verification will run when you submit KYC."}
+    return {"document_type": document_type, "uploaded": True, "verification_status": "pending_submit", **result, "message": f"{document_type.replace('_', ' ').title()} saved. Cross-verification will run when you submit KYC."}
 
 
 @router.post("/kyc-secondary")
 async def upload_kyc_secondary(file: UploadFile = File(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    if (current_user.kyc_status or "unverified").lower() in {"verified", "under_review"}:
-        raise HTTPException(status_code=409, detail="Identity documents cannot be changed after submission.")
+    # Backward-compatible alias. New frontend uses /kyc-document with an explicit document_type.
     profile = db.query(RiderProfile).filter(RiderProfile.rider_id == current_user.id).first()
-    if not profile:
-        profile = RiderProfile(rider_id=current_user.id)
-        db.add(profile)
-    secondary_type = (profile.secondary_id_type or "").lower()
-    if secondary_type not in ALLOWED_SECONDARY:
+    secondary_type = (profile.secondary_id_type if profile else "") or ""
+    if secondary_type not in {"aadhaar", "pan"}:
         raise HTTPException(status_code=422, detail="Choose Aadhaar or PAN before uploading the additional document.")
-    result = await _upload(file, f"zenoguard/kyc/{current_user.id}/{secondary_type}")
-    profile.secondary_id_document_url = result["cloudinary_url"]
-    profile.secondary_ai_document_status = "uploaded"
-    profile.secondary_ai_document_type = secondary_type
-    profile.secondary_ai_document_confidence = None
-    profile.secondary_ai_extracted_name = None
-    profile.secondary_ai_extracted_id_number = None
-    profile.secondary_ai_verification_note = "Saved. AI verification runs only when KYC is submitted."
-    db.commit()
-    db.refresh(profile)
-    return {"document_type": secondary_type, "uploaded": True, "verification_status": "pending_submit", **result, "message": f"{secondary_type.upper()} document saved. Verification will run when you submit KYC."}
+    return await upload_kyc_document(file=file, document_type=secondary_type, current_user=current_user, db=db)
 
 
 @router.post("/kyc-selfie")
