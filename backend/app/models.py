@@ -46,6 +46,13 @@ class RiderProfile(Base):
     submitted_at = Column(DateTime, nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     review_note = Column(String, nullable=True)
+    ai_document_status = Column(String, default="pending")
+    ai_document_confidence = Column(Float, nullable=True)
+    ai_document_type = Column(String, nullable=True)
+    ai_extracted_name = Column(String, nullable=True)
+    ai_extracted_dob = Column(String, nullable=True)
+    ai_extracted_id_number = Column(String, nullable=True)
+    ai_verification_note = Column(String, nullable=True)
 
     rider = relationship("Rider", back_populates="profile")
 
