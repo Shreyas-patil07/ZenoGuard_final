@@ -12,7 +12,7 @@ class Rider(Base):
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
     wallet_address = Column(String, unique=True, index=True, nullable=True)
-    kyc_status = Column(String, default="pending")
+    kyc_status = Column(String, default="unverified")
     wallet_balance = Column(Float, default=0.0)
     upi_id = Column(String, nullable=True)
     phone = Column(String, nullable=True)
@@ -22,11 +22,32 @@ class Rider(Base):
     razorpay_contact_id = Column(String, nullable=True, unique=True)
     razorpay_fund_account_id = Column(String, nullable=True, unique=True)
 
+    profile = relationship("RiderProfile", back_populates="rider", uselist=False, cascade="all, delete-orphan")
     policies = relationship("Policy", back_populates="rider")
     earnings = relationship("EarningsLog", back_populates="rider")
     wallet_transactions = relationship("WalletTransaction", back_populates="rider")
     work_sessions = relationship("WorkSession", back_populates="rider")
     payments = relationship("Payment", back_populates="rider")
+
+
+class RiderProfile(Base):
+    __tablename__ = "rider_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rider_id = Column(Integer, ForeignKey("riders.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    phone = Column(String, nullable=True)
+    date_of_birth = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    id_type = Column(String, nullable=True)
+    id_number = Column(String, nullable=True)
+    id_document_url = Column(String, nullable=True)
+    selfie_url = Column(String, nullable=True)
+    submitted_at = Column(DateTime, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_note = Column(String, nullable=True)
+
+    rider = relationship("Rider", back_populates="profile")
 
 
 class WalletTransaction(Base):
