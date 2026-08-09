@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -12,14 +14,14 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    console.log("Frontend: Submitting signup form with data:", formData);
-    
+    console.log('Frontend: Submitting signup form with data:', formData);
+
     try {
-      const response = await axios.post('http://localhost:8000/auth/signup', formData);
-      console.log("Frontend: Received success response:", response.data);
+      const response = await axios.post(`${API_URL}/auth/signup`, formData);
+      console.log('Frontend: Received success response:', response.data);
       navigate('/kyc');
     } catch (error) {
-      console.error("Frontend: Signup error:", error.response ? error.response.data : error.message);
+      console.error('Frontend: Signup error:', error.response ? error.response.data : error.message);
     }
   };
 
