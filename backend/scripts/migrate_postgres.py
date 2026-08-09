@@ -41,6 +41,9 @@ COLUMN_MIGRATIONS = {
         "ai_extracted_dob": "TEXT",
         "ai_extracted_id_number": "TEXT",
         "ai_verification_note": "TEXT",
+        "secondary_id_type": "TEXT",
+        "secondary_id_number": "TEXT",
+        "secondary_id_document_url": "TEXT",
     },
 }
 
