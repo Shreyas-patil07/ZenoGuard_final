@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import logoNoBg from './assets/logo_no_bg.png';
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -18,10 +18,7 @@ import {
   LogOut,
   Menu,
   RefreshCw,
-  Shield,
   ShieldCheck,
-  Sparkles,
-  WalletCards,
   X,
   Zap,
 } from 'lucide-react';
@@ -61,7 +58,12 @@ function Brand() {
 function Topbar() {
   const loggedIn = !!localStorage.getItem('access_token');
   const navigate = useNavigate();
-  const logout = () => { localStorage.clear(); navigate('/login'); };
+  const logout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   return <header className="topbar">
     <Brand />
     <nav className="topnav">
@@ -95,31 +97,130 @@ function Feature({ n, icon, title, text }) { return <article className="feature-
 function AuthPage({ mode }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name:'', email:'', password:'', confirm:'' });
-  const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const isSignup = mode === 'signup';
+
   const submit = async (e) => {
-    e.preventDefault(); setError('');
+    e.preventDefault();
+    setError('');
     if (isSignup && form.password !== form.confirm) return setError('Passwords do not match.');
     setBusy(true);
-    try { const { data } = isSignup ? await auth.signup(form.name, form.email, form.password) : await auth.login(form.email, form.password); saveSession(data); navigate('/dashboard'); }
-    catch (err) { setError(err.response?.data?.detail || 'Request failed. Check the backend and your credentials.'); }
-    finally { setBusy(false); }
+    try {
+      const { data } = isSignup
+        ? await auth.signup(form.name, form.email, form.password)
+        : await auth.login(form.email, form.password);
+      saveSession(data);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Request failed. Check the backend and your credentials.');
+    } finally {
+      setBusy(false);
+    }
   };
+
   return <div className="auth-page"><div className="ambient ambient-a"/><div className="ambient ambient-b"/><div className="auth-card"><Brand/><div className="auth-content"><div className="eyebrow">AI-NEGOTIATED MICRO-INSURANCE</div><h1>{isSignup ? 'Build your protection profile.' : 'Welcome back.'}</h1><p className="muted">{isSignup ? 'Start with your identity and gig-work profile.' : 'Sign in to manage your protection.'}</p>{error&&<div className="alert error">{error}</div>}<form className="form-stack" onSubmit={submit}>{isSignup&&<label>Full name<input required placeholder="Your name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>}<label>Email address<input required type="email" placeholder="you@example.com" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label><label>Password<input required type="password" placeholder="••••••••" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></label>{isSignup&&<label>Confirm password<input required type="password" placeholder="Repeat password" value={form.confirm} onChange={e=>setForm({...form,confirm:e.target.value})}/></label>}<button className="primary-btn submit" disabled={busy}>{busy?'Please wait...':isSignup?'Create account':'Log in'}<ArrowRight size={17}/></button></form><div className="auth-footer">{isSignup ? <>Already registered? <Link to="/login">Log in</Link></> : <>New to ZenoGuard? <Link to="/signup">Create an account</Link></>}</div></div></div><Link className="back-home" to="/">← Back to home</Link></div>;
 }
 
 function Shell({ title, children }) {
-  const navigate = useNavigate(); const user = userFromStorage(); const [open,setOpen]=useState(false);
-  const logout = () => { localStorage.clear(); navigate('/login'); };
-  return <div className="app-shell"><aside className={`sidebar ${open?'open':''}`}><div className="side-brand"><Brand/><button className="mobile-close" onClick={()=>setOpen(false)}><X/></button></div><div className="side-user"><div className="avatar">{(user?.name||'G').slice(0,1).toUpperCase()}</div><div><b>{user?.name||'Guardian'}</b><span>Gig worker</span></div></div><nav className="side-nav"><Link to="/dashboard">Overview</Link><Link to="/claims">Claims</Link><Link to="/wallet">Wallet</Link><Link to="/dashboard#profile">Protection</Link></nav><button className="side-logout" onClick={logout}><LogOut size={17}/> Logout</button></aside><main className="app-main"><header className="mobile-top"><button className="menu-btn" onClick={()=>setOpen(true)}><Menu/></button><Brand/><Bell size={19}/></header><div className="page-head"><div><div className="eyebrow">ZENOGUARD PROTECTION</div><h1>{title}</h1></div><div className="status-pill"><ShieldCheck size={16}/> Protection active</div></div>{children}</main></div>;
+  const navigate = useNavigate();
+  const user = userFromStorage();
+  const [open, setOpen] = useState(false);
+  const [policyState, setPolicyState] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    api.get('/premium/active-policy')
+      .then((res) => { if (mounted) setPolicyState(res.data); })
+      .catch(() => { if (mounted) setPolicyState(null); });
+    return () => { mounted = false; };
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const active = policyState?.policy;
+  const pending = policyState?.pending_policy;
+  const status = active?.active
+    ? active.blockchain_status === 'CONFIRMED' ? 'Protection active' : 'Blockchain pending'
+    : pending ? 'Payment pending' : 'No active protection';
+
+  return <div className="app-shell"><aside className={`sidebar ${open?'open':''}`}><div className="side-brand"><Brand/><button className="mobile-close" onClick={()=>setOpen(false)}><X/></button></div><div className="side-user"><div className="avatar">{(user?.name||'G').slice(0,1).toUpperCase()}</div><div><b>{user?.name||'Guardian'}</b><span>Gig worker</span></div></div><nav className="side-nav"><Link to="/dashboard">Overview</Link><Link to="/claims">Claims</Link><Link to="/wallet">Wallet</Link></nav><button className="side-logout" onClick={logout}><LogOut size={17}/> Logout</button></aside><main className="app-main"><header className="mobile-top"><button className="menu-btn" onClick={()=>setOpen(true)}><Menu/></button><Brand/><span aria-hidden="true"/></header><div className="page-head"><div><div className="eyebrow">ZENOGUARD PROTECTION</div><h1>{title}</h1></div><div className="status-pill"><ShieldCheck size={16}/> {status}</div></div>{children}</main></div>;
 }
 
 function Dashboard() {
-  const user = userFromStorage(); const [premium,setPremium]=useState(null); const [msg,setMsg]=useState(''); const [earn,setEarn]=useState({income:'',hours_worked:''}); const [busy,setBusy]=useState(false);
-  const load=async()=>{try{const r=await api.get('/premium/calculate');setPremium(r.data)}catch(e){setMsg(e.response?.data?.detail||'Premium endpoint unavailable; use the ML endpoint directly for testing.')}};
-  useEffect(()=>{load()},[]);
-  const save=async e=>{e.preventDefault();setBusy(true);setMsg('');try{await api.post('/earnings/upload',{income:+earn.income,hours_worked:+earn.hours_worked});setMsg('Earnings saved.');setEarn({income:'',hours_worked:''});await load()}catch(e){setMsg(e.response?.data?.detail||'Could not save earnings.')}finally{setBusy(false)}};
-  return <Shell title={`Welcome back, ${user?.name||'Guardian'}.`}><div className="dashboard-grid"><div className="metric-card featured"><div className="metric-label"><ShieldCheck size={17}/> ACTIVE PROTECTION</div><strong>₹{Number(premium?.premium??premium?.recommended_premium??0).toFixed(2)}</strong><span>/ day indicative premium</span><div className="metric-bottom"><span>Risk score {premium?.risk_score??'—'}</span><button onClick={load}><RefreshCw size={15}/></button></div></div><div className="metric-card"><div className="metric-label"><IndianRupee size={17}/> RISK EXPLANATION</div><h3>{premium?.explanation||'Your premium is driven by your current work-risk profile.'}</h3><span>Backend risk engine + ML premium model</span></div><div className="metric-card"><div className="metric-label"><BrainCircuit size={17}/> VERIFICATION</div><h3>ML → Oracle → Claim Manager</h3><span>Blockchain settlement is ready for local/testnet integration.</span></div></div><div className="split-grid"><div className="panel"><div className="eyebrow">EARNINGS</div><h2>Update today's work</h2><form className="inline-form" onSubmit={save}><input type="number" min="0" placeholder="Income ₹" required value={earn.income} onChange={e=>setEarn({...earn,income:e.target.value})}/><input type="number" min="0" step="0.1" placeholder="Hours" required value={earn.hours_worked} onChange={e=>setEarn({...earn,hours_worked:e.target.value})}/><button className="primary-btn" disabled={busy}>{busy?'Saving...':'Save'}</button></form>{msg&&<div className="notice">{msg}</div>}</div><div className="panel claim-cta"><div className="metric-label"><FileWarning size={17}/> CLAIMS</div><h2>Something happened on the road?</h2><p className="muted">Submit the event and let the ML verification layer determine the next state.</p><Link className="primary-btn" to="/claims">Start a claim <ArrowUpRight size={17}/></Link></div></div></Shell>;
+  const user = userFromStorage();
+  const [policyState, setPolicyState] = useState(null);
+  const [premium, setPremium] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState('');
+  const [earn, setEarn] = useState({ income:'', hours_worked:'' });
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const [policyRes, premiumRes] = await Promise.all([
+        api.get('/premium/active-policy'),
+        api.get('/premium/calculate'),
+      ]);
+      setPolicyState(policyRes.data);
+      setPremium(premiumRes.data);
+    } catch (e) {
+      setMsg(e.response?.data?.detail || 'Unable to load protection status.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setMsg('');
+    try {
+      await api.post('/earnings/upload', { income:+earn.income, hours_worked:+earn.hours_worked });
+      setMsg('Earnings saved.');
+      setEarn({ income:'', hours_worked:'' });
+      await load();
+    } catch (e) {
+      setMsg(e.response?.data?.detail || 'Could not save earnings.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const active = policyState?.policy;
+  const pending = policyState?.pending_policy;
+  const blockchainConfirmed = active?.blockchain_status === 'CONFIRMED';
+
+  return <Shell title={`Welcome back, ${user?.name||'Guardian'}`}>
+    <div className="dashboard-grid">
+      <div className="metric-card featured">
+        <div className="metric-label"><ShieldCheck size={17}/> {active ? 'ACTIVE PROTECTION' : pending ? 'PAYMENT PENDING' : 'PROTECTION STATUS'}</div>
+        {loading ? <><strong>Loading...</strong><span>Checking your current policy</span></> : active ? <><strong>{active.tier_label}</strong><span>{active.days_remaining ?? 0} days remaining · ₹{Number(active.total_premium || 0).toFixed(2)} paid</span></> : pending ? <><strong>{pending.tier_label}</strong><span>Complete premium payment to activate coverage</span></> : <><strong>No active policy</strong><span>Choose a protection plan from Wallet</span></>}
+        <div className="metric-bottom"><span>{active ? `Risk score ${active.risk_score}` : `Indicative risk ${premium?.risk_score ?? '—'}`}</span><button onClick={load} aria-label="Refresh protection status"><RefreshCw size={15}/></button></div>
+      </div>
+      <div className="metric-card">
+        <div className="metric-label"><IndianRupee size={17}/> {active ? 'COVERAGE' : 'INDICATIVE PREMIUM'}</div>
+        {active ? <><h3>₹{Number(active.coverage?.accident || 0).toLocaleString('en-IN')}</h3><span>Accident coverage · Breakdown ₹{Number(active.coverage?.breakdown || 0).toLocaleString('en-IN')} · Weather ₹{Number(active.coverage?.weather || 0).toLocaleString('en-IN')}</span></> : <><h3>₹{Number(premium?.premium ?? premium?.recommended_premium ?? 0).toFixed(2)}/day</h3><span>{premium?.explanation || 'Calculated from your current work-risk profile.'}</span></>}
+      </div>
+      <div className="metric-card">
+        <div className="metric-label"><BrainCircuit size={17}/> BLOCKCHAIN</div>
+        {active ? <><h3>{blockchainConfirmed ? 'CONFIRMED' : active.blockchain_status || 'PENDING'}</h3><span>{active.blockchain_policy_id ? `On-chain policy #${active.blockchain_policy_id}` : 'Policy synchronization pending'}</span></> : <><h3>Ready</h3><span>Policy activation is recorded on-chain after successful payment verification.</span></>}
+      </div>
+    </div>
+
+    <div className="split-grid">
+      <div className="panel"><div className="eyebrow">EARNINGS</div><h2>Update today's work</h2><form className="inline-form" onSubmit={save}><input type="number" min="0" placeholder="Income ₹" required value={earn.income} onChange={e=>setEarn({...earn,income:e.target.value})}/><input type="number" min="0" step="0.1" placeholder="Hours" required value={earn.hours_worked} onChange={e=>setEarn({...earn,hours_worked:e.target.value})}/><button className="primary-btn" disabled={busy}>{busy?'Saving...':'Save'}</button></form>{msg&&<div className="notice">{msg}</div>}</div>
+      <div className="panel claim-cta"><div className="metric-label"><FileWarning size={17}/> CLAIMS</div><h2>Something happened on the road?</h2><p className="muted">Submit the event and let the ML verification layer determine the next state.</p><Link className="primary-btn" to="/claims">Start a claim <ArrowUpRight size={17}/></Link></div>
+    </div>
+  </Shell>;
 }
 
 function Claims() {
@@ -218,8 +319,16 @@ function Claims() {
   </Shell>;
 }
 
-function SimplePage({title,label,children}) { return <Shell title={title}><div className="content-narrow"><div className="panel"><div className="eyebrow">{label}</div>{children}</div></div></Shell>; }
+function App() {
+  return <BrowserRouter><Routes>
+    <Route path="/" element={<Home/>}/>
+    <Route path="/login" element={<AuthPage mode="login"/>}/>
+    <Route path="/signup" element={<AuthPage mode="signup"/>}/>
+    <Route path="/dashboard" element={<Protected><Dashboard/></Protected>}/>
+    <Route path="/claims" element={<Protected><Claims/></Protected>}/>
+    <Route path="/wallet" element={<Protected><WalletPayments Shell={Shell}/></Protected>}/>
+    <Route path="*" element={<Navigate to="/" replace/>}/>
+  </Routes></BrowserRouter>;
+}
 
-function App() { return <BrowserRouter><Routes><Route path="/" element={<Home/>}/><Route path="/login" element={<AuthPage mode="login"/>}/><Route path="/signup" element={<AuthPage mode="signup"/>}/><Route path="/dashboard" element={<Protected><Dashboard/></Protected>}/><Route path="/claims" element={<Protected><Claims/></Protected>}/><Route path="/wallet" element={<Protected><WalletPayments Shell={Shell}/></Protected>}/><Route path="/kyc" element={<Protected><SimplePage title="Identity verification" label="KYC"><h2>Verify your identity</h2><p className="muted">Connect the production KYC provider here. The frontend node is ready without storing documents on-chain.</p><div className="info-row"><Shield size={20}/> Evidence remains off-chain.</div></SimplePage></Protected>}/><Route path="/company" element={<Protected><SimplePage title="Gig platform" label="WORK PROFILE"><h2>Choose your platform</h2><p className="muted">Uber · Ola · Zomato · Swiggy can feed the work profile used by the risk engine.</p><div className="platform-grid"><div className="platform-card selected"><Sparkles/><b>Gig profile ready</b><span>Connected to FastAPI</span></div></div></SimplePage></Protected>}/><Route path="/timeline" element={<Protected><SimplePage title="Claim timeline" label="SETTLEMENT"><div className="timeline"><TimelineStep icon={<CheckCircle2/>} title="Claim submitted" text="Evidence enters the backend."/><TimelineStep icon={<BrainCircuit/>} title="AI verification" text="Fraud probability and confidence are calculated."/><TimelineStep icon={<ShieldCheck/>} title="Smart contract" text="Authorized oracle records verification."/><TimelineStep icon={<WalletCards/>} title="Payout" text="InsurancePool releases testnet funds."/></div></SimplePage></Protected>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>; }
-function TimelineStep({icon,title,text}) { return <div className="timeline-item"><div className="timeline-dot">{icon}</div><div><b>{title}</b><span>{text}</span></div></div>; }
 export default App;
