@@ -1,57 +1,15 @@
 /* ZenoGuard application styles live in index.css. Kept as a stable import for the existing Vite entrypoint. */
 
-.brand-logo {
-  height: 72px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
+.brand-logo { height: 82px; width: auto; object-fit: contain; display: block; transform: scale(1.08); transform-origin: center; }
+.brand::after { content: 'ZenoGuard'; display: inline-block; margin-left: 4px; font-size: 25px; font-weight: 800; line-height: 1; letter-spacing: -1.5px; background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 49.5%, var(--teal) 50.5%, var(--teal) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.footer .brand::after { font-size: 19px; }
+@media (max-width: 950px) { .mobile-top .brand::after { font-size: 20px; } }
+@media (max-width: 620px) { .brand-logo { height: 76px; transform: scale(1.06); } .brand::after { font-size: 21px; } .footer .brand::after { font-size: 16px; } }
 
 /* Duration pill picker */
-.duration-picker {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 4px 0;
-}
-
-.duration-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted, #6b7280);
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  text-transform: uppercase;
-}
-
-.duration-pills {
-  display: flex;
-  gap: 6px;
-  background: #f3f4f6;
-  border-radius: 10px;
-  padding: 4px;
-}
-
-.duration-pill {
-  padding: 6px 16px;
-  border-radius: 7px;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
-  white-space: nowrap;
-}
-
-.duration-pill:hover {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.duration-pill.active {
-  background: #111827;
-  color: #ffffff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-}
+.duration-picker { display: flex; align-items: center; gap: 12px; margin: 4px 0; }
+.duration-label { font-size: 13px; font-weight: 600; color: var(--muted, #6b7280); letter-spacing: 0.04em; white-space: nowrap; text-transform: uppercase; }
+.duration-pills { display: flex; gap: 6px; background: #f3f4f6; border-radius: 10px; padding: 4px; }
+.duration-pill { padding: 6px 16px; border-radius: 7px; border: none; background: transparent; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; transition: background 0.15s, color 0.15s, box-shadow 0.15s; white-space: nowrap; }
+.duration-pill:hover { background: #e5e7eb; color: #111827; }
+.duration-pill.active { background: #111827; color: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
