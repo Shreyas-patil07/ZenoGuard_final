@@ -15,3 +15,4 @@ web3
 python-multipart
 Pillow
 cloudinary
+inference-sdk
