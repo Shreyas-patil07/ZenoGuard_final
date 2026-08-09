@@ -33,6 +33,15 @@ COLUMN_MIGRATIONS = {
         "secondary_ai_extracted_name": "TEXT",
         "secondary_ai_extracted_id_number": "TEXT",
         "secondary_ai_verification_note": "TEXT",
+        "tertiary_id_type": "TEXT",
+        "tertiary_id_number": "TEXT",
+        "tertiary_id_document_url": "TEXT",
+        "tertiary_ai_document_status": "TEXT DEFAULT 'pending'",
+        "tertiary_ai_document_confidence": "DOUBLE PRECISION",
+        "tertiary_ai_document_type": "TEXT",
+        "tertiary_ai_extracted_name": "TEXT",
+        "tertiary_ai_extracted_id_number": "TEXT",
+        "tertiary_ai_verification_note": "TEXT",
     },
 }
 
