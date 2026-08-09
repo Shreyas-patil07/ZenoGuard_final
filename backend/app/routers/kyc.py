@@ -10,6 +10,7 @@ from ..models import Rider, RiderProfile
 from ..routers.auth import get_current_user
 
 router = APIRouter(prefix="/kyc", tags=["kyc"])
+ALLOWED_SECONDARY_IDS = {"aadhaar", "pan"}
 
 
 class ProfileUpdate(BaseModel):
@@ -19,6 +20,8 @@ class ProfileUpdate(BaseModel):
     city: str = Field(min_length=2, max_length=100)
     id_type: str = Field(min_length=2, max_length=40)
     id_number: str = Field(min_length=4, max_length=80)
+    secondary_id_type: str = Field(min_length=6, max_length=20)
+    secondary_id_number: str = Field(min_length=4, max_length=80)
 
 
 class ReviewDecision(BaseModel):
@@ -53,7 +56,9 @@ def _profile_dict(profile: RiderProfile, rider) -> dict:
         "id_type": profile.id_type,
         "id_number_masked": _masked(profile.id_number),
         "id_document_url": profile.id_document_url,
-        "selfie_url": profile.selfie_url,
+        "secondary_id_type": profile.secondary_id_type,
+        "secondary_id_number_masked": _masked(profile.secondary_id_number),
+        "secondary_id_document_url": profile.secondary_id_document_url,
         "kyc_status": rider.kyc_status or "unverified",
         "submitted_at": profile.submitted_at.isoformat() if profile.submitted_at else None,
         "reviewed_at": profile.reviewed_at.isoformat() if profile.reviewed_at else None,
@@ -78,13 +83,19 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
     if (current_user.kyc_status or "unverified").lower() in {"verified", "under_review"}:
         raise HTTPException(status_code=409, detail="Verified or submitted identity details cannot be edited. Contact support if they are incorrect.")
 
+    secondary_type = payload.secondary_id_type.strip().lower()
+    if secondary_type not in ALLOWED_SECONDARY_IDS:
+        raise HTTPException(status_code=422, detail="Choose either Aadhaar or PAN as your additional identity document.")
+
     profile = _profile(db, current_user.id)
     profile.phone = payload.phone.strip()
     profile.date_of_birth = payload.date_of_birth.strip()
     profile.address = payload.address.strip()
     profile.city = payload.city.strip()
-    profile.id_type = payload.id_type.strip().lower()
+    profile.id_type = "driving_license"
     profile.id_number = payload.id_number.strip()
+    profile.secondary_id_type = secondary_type
+    profile.secondary_id_number = payload.secondary_id_number.strip()
     db.commit()
     db.refresh(profile)
     return {"message": "Profile saved.", "profile": _profile_dict(profile, current_user)}
@@ -93,12 +104,27 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
 @router.post("/submit")
 def submit_kyc(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     profile = _profile(db, current_user.id)
-    missing = [field for field in ("phone", "date_of_birth", "address", "city", "id_type", "id_number", "id_document_url", "selfie_url") if not getattr(profile, field, None)]
+    missing = [
+        field for field in (
+            "phone", "date_of_birth", "address", "city", "id_number",
+            "id_document_url", "secondary_id_type", "secondary_id_number",
+            "secondary_id_document_url",
+        ) if not getattr(profile, field, None)
+    ]
     if missing:
-        raise HTTPException(status_code=400, detail=f"Complete your profile and upload both identity documents before submitting. Missing: {', '.join(missing)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Complete your profile and upload the mandatory driving licence plus Aadhaar or PAN. Missing: {', '.join(missing)}",
+        )
+
+    if profile.id_type != "driving_license":
+        raise HTTPException(status_code=422, detail="Driving licence is mandatory for KYC.")
+
+    if (profile.secondary_id_type or "").lower() not in ALLOWED_SECONDARY_IDS:
+        raise HTTPException(status_code=422, detail="Choose either Aadhaar or PAN as the additional identity document.")
 
     if (profile.ai_document_status or "pending").lower() != "verified":
-        raise HTTPException(status_code=422, detail="The identity document has not passed the automated document checks yet. Re-upload a clear driving licence image.")
+        raise HTTPException(status_code=422, detail="The driving licence has not passed the automated document checks yet. Re-upload a clear driving licence image.")
 
     current_status = (current_user.kyc_status or "unverified").lower()
     if current_status == "verified":
