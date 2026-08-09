@@ -36,6 +36,12 @@ def _profile(db: Session, rider_id: int) -> RiderProfile:
     return profile
 
 
+def _masked(value: str | None) -> str | None:
+    if not value:
+        return None
+    return f"{'*' * max(0, len(value) - 4)}{value[-4:]}"
+
+
 def _profile_dict(profile: RiderProfile, rider) -> dict:
     return {
         "name": rider.name,
@@ -45,20 +51,26 @@ def _profile_dict(profile: RiderProfile, rider) -> dict:
         "address": profile.address,
         "city": profile.city,
         "id_type": profile.id_type,
-        "id_number_masked": f"{'*' * max(0, len(profile.id_number or '') - 4)}{(profile.id_number or '')[-4:]}" if profile.id_number else None,
+        "id_number_masked": _masked(profile.id_number),
         "id_document_url": profile.id_document_url,
         "selfie_url": profile.selfie_url,
         "kyc_status": rider.kyc_status or "unverified",
         "submitted_at": profile.submitted_at.isoformat() if profile.submitted_at else None,
         "reviewed_at": profile.reviewed_at.isoformat() if profile.reviewed_at else None,
         "review_note": profile.review_note,
+        "ai_document_status": profile.ai_document_status or "pending",
+        "ai_document_confidence": profile.ai_document_confidence,
+        "ai_document_type": profile.ai_document_type,
+        "ai_extracted_name": profile.ai_extracted_name,
+        "ai_extracted_dob": profile.ai_extracted_dob,
+        "ai_extracted_id_number_masked": _masked(profile.ai_extracted_id_number),
+        "ai_verification_note": profile.ai_verification_note,
     }
 
 
 @router.get("/profile")
 def get_profile(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    profile = _profile(db, current_user.id)
-    return _profile_dict(profile, current_user)
+    return _profile_dict(_profile(db, current_user.id), current_user)
 
 
 @router.put("/profile")
@@ -81,12 +93,12 @@ def update_profile(payload: ProfileUpdate, db: Session = Depends(get_db), curren
 @router.post("/submit")
 def submit_kyc(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     profile = _profile(db, current_user.id)
-    missing = []
-    for field in ("phone", "date_of_birth", "address", "city", "id_type", "id_number", "id_document_url", "selfie_url"):
-        if not getattr(profile, field, None):
-            missing.append(field)
+    missing = [field for field in ("phone", "date_of_birth", "address", "city", "id_type", "id_number", "id_document_url", "selfie_url") if not getattr(profile, field, None)]
     if missing:
         raise HTTPException(status_code=400, detail=f"Complete your profile and upload both identity documents before submitting. Missing: {', '.join(missing)}")
+
+    if (profile.ai_document_status or "pending").lower() != "verified":
+        raise HTTPException(status_code=422, detail="The identity document has not passed the automated document checks yet. Re-upload a clear driving licence image.")
 
     current_status = (current_user.kyc_status or "unverified").lower()
     if current_status == "verified":
@@ -104,12 +116,7 @@ def submit_kyc(db: Session = Depends(get_db), current_user=Depends(get_current_u
 
 
 @router.post("/review/{rider_id}")
-def review_kyc(
-    rider_id: int,
-    payload: ReviewDecision,
-    x_kyc_review_key: str | None = Header(default=None),
-    db: Session = Depends(get_db),
-):
+def review_kyc(rider_id: int, payload: ReviewDecision, x_kyc_review_key: str | None = Header(default=None), db: Session = Depends(get_db)):
     configured_key = os.getenv("KYC_REVIEW_KEY")
     if not configured_key or x_kyc_review_key != configured_key:
         raise HTTPException(status_code=403, detail="KYC review access denied")
