@@ -269,15 +269,45 @@ def get_transaction_receipt(tx_hash: str) -> dict[str, Any]:
 
 def get_policy_id_from_purchase(tx_hash: str) -> int:
     w3 = _w3()
+
     if not w3.is_connected():
         raise RuntimeError("Unable to connect to Ethereum RPC")
-    contract = _contract(w3, "insurance_policy", INSURANCE_POLICY_ABI)
+
+    contract = _contract(
+        w3,
+        "insurance_policy",
+        INSURANCE_POLICY_ABI,
+    )
+
     receipt = w3.eth.get_transaction_receipt(tx_hash)
+
     if receipt.status != 1:
         raise RuntimeError("Policy purchase transaction reverted")
-    events = contract.events.PolicyPurchased().process_receipt(receipt)
+
+    policy_address = Web3.to_checksum_address(
+        _address("insurance_policy")
+    )
+
+    policy_logs = [
+        log
+        for log in receipt.logs
+        if Web3.to_checksum_address(log["address"]) == policy_address
+    ]
+
+    if not policy_logs:
+        raise RuntimeError(
+            "No logs emitted by InsurancePolicy in transaction"
+        )
+
+    events = contract.events.PolicyPurchased().process_receipt(
+        {"logs": policy_logs}
+    )
+
     if not events:
-        raise RuntimeError("PolicyPurchased event not found in transaction")
+        raise RuntimeError(
+            "PolicyPurchased event not found in transaction"
+        )
+
     return int(events[-1]["args"]["policyId"])
 
 
