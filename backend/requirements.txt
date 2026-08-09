@@ -16,5 +16,4 @@ python-multipart
 Pillow
 cloudinary
 requests
-ultralytics
 pytesseract
