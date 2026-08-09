@@ -15,7 +15,6 @@ web3
 python-multipart
 Pillow
 cloudinary
-inference-sdk
 requests
 ultralytics
 pytesseract
