@@ -17,3 +17,5 @@ Pillow
 cloudinary
 inference-sdk
 requests
+ultralytics
+pytesseract
