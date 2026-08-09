@@ -16,3 +16,4 @@ python-multipart
 Pillow
 cloudinary
 inference-sdk
+requests
