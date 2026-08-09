@@ -136,7 +136,7 @@ export default function Profile({ Shell }) {
       <div className="panel">
         <div className="eyebrow">IDENTITY EVIDENCE</div>
         <h2>Upload required documents</h2>
-        <p className="muted"><strong>Upload only.</strong> Uploading saves the document to the database/storage. Roboflow + OCR + validation are triggered only after you press <strong>Submit for verification</strong>.</p>
+        <p className="muted"><strong>Upload only.</strong> Uploading saves the document to the database/storage. Local YOLO field detection + OCR + validation are triggered only after you press <strong>Submit for verification</strong>.</p>
 
         <div className="timeline">
           <div className="timeline-item"><div className="timeline-dot"><FileCheck2/></div><div><b>1. Driving licence · Mandatory</b><span>{profile?.id_document_url ? `Saved · ${profile.id_number_masked}` : 'Not uploaded'}</span></div></div>
