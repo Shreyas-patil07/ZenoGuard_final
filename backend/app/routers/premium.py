@@ -108,6 +108,15 @@ def activate_policy(payload: PremiumRequest, db: Session = Depends(get_db), curr
     if existing:
         return {"message": "You already have an active policy.", "policy": _policy_dict(existing)}
 
+    kyc_status = (current_user.kyc_status or "unverified").lower()
+    if kyc_status != "verified":
+        message = "Complete identity verification before purchasing a protection policy."
+        if kyc_status == "under_review":
+            message = "Identity verification is still under review. Policy purchase is locked until verification is approved."
+        elif kyc_status == "rejected":
+            message = "Identity verification was rejected. Update your profile and resubmit before purchasing a policy."
+        raise HTTPException(status_code=403, detail=message)
+
     pending = get_pending_policy(db, current_user.id)
     if pending:
         return {"message": "A premium payment is already pending.", "policy": _policy_dict(pending), "next_step": f"POST /payments/premium/order with policy_id={pending.id}"}
