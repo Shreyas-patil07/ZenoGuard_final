@@ -3,7 +3,7 @@ import { BadgeCheck, CheckCircle2, Clock3, FileCheck2, ShieldCheck, Upload, User
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-const api = axios.create({ baseURL: API_URL, timeout: 120000 });
+const api = axios.create({ baseURL: API_URL, timeout: 300000 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -24,6 +24,15 @@ const DOCS = [
   { type: 'pan', label: 'PAN Card', mandatory: false },
 ];
 
+function apiError(error, fallback) {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (detail?.message) return detail.message;
+  if (error?.code === 'ECONNABORTED') return 'Document verification is taking longer than expected. Check the verification status before submitting again.';
+  if (!error?.response) return 'The verification server could not be reached. Please try again.';
+  return fallback;
+}
+
 export default function Profile({ Shell }) {
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState(initialForm);
@@ -32,17 +41,19 @@ export default function Profile({ Shell }) {
   const [error, setError] = useState('');
   const [submitResult, setSubmitResult] = useState(null);
 
-  const load = async () => {
+  const load = async (showError = true) => {
     try {
       const { data } = await api.get('/kyc/profile');
       setProfile(data);
       setForm({ phone: data.phone || '', driving_license_number: '', date_of_birth: data.date_of_birth || '', address: data.address || '', city: data.city || '' });
+      return data;
     } catch (e) {
-      setError(e.response?.data?.detail || 'Unable to load your profile.');
+      if (showError) setError(apiError(e, 'Unable to load your profile.'));
+      throw e;
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load().catch(() => {}); }, []);
 
   const save = async (e) => {
     e.preventDefault();
@@ -53,7 +64,7 @@ export default function Profile({ Shell }) {
       setMessage(data.message);
       setForm((prev) => ({ ...prev, driving_license_number: '' }));
     } catch (e) {
-      setError(e.response?.data?.detail || 'Unable to save profile.');
+      setError(apiError(e, 'Unable to save profile.'));
     } finally { setBusy(''); }
   };
 
@@ -66,9 +77,9 @@ export default function Profile({ Shell }) {
       body.append('document_type', documentType);
       const { data } = await api.post('/upload/kyc-document', body, { headers: { 'Content-Type': 'multipart/form-data' } });
       setMessage(`${data.message} AI verification will run only after Submit for verification.`);
-      await load();
+      await load(false);
     } catch (e) {
-      setError(e.response?.data?.detail || `Unable to save ${documentType.replace('_', ' ')}.`);
+      setError(apiError(e, `Unable to save ${documentType.replace('_', ' ')}.`));
     } finally { setBusy(''); }
   };
 
@@ -78,13 +89,15 @@ export default function Profile({ Shell }) {
       const { data } = await api.post('/kyc/submit');
       setProfile(data.profile);
       setSubmitResult(data);
-      setMessage(data.message);
-      await load();
+      setMessage(data.message || 'KYC verification completed.');
+      // Do not immediately call /kyc/profile again. The submit response is authoritative,
+      // and an extra request can hide a successful verification behind a transient load error.
     } catch (e) {
       const detail = e.response?.data?.detail;
       setSubmitResult(typeof detail === 'object' ? detail : null);
-      setError(typeof detail === 'string' ? detail : detail?.message || 'Cross-verification failed.');
-      await load();
+      setError(apiError(e, 'Cross-verification failed.'));
+      // Do NOT call load() here. A failed/slow submit must not overwrite the real
+      // verification error with "Unable to load your profile".
     } finally { setBusy(''); }
   };
 
@@ -159,6 +172,7 @@ export default function Profile({ Shell }) {
           <div className="metric-label">CROSS-VERIFICATION RESULT</div>
           {submitResult.driving_license && <div className="info-row"><CheckCircle2 size={18}/><span>Driving licence: {submitResult.driving_license.status} · number match: {String(submitResult.driving_license.dl_number_match)}</span></div>}
           {(submitResult.documents || []).map((doc, i) => <div className="info-row" key={i}><CheckCircle2 size={18}/><span>{doc.document_type}: {doc.status} · name match: {String(doc.name_match)}</span></div>)}
+          {submitResult.message && <p className="muted" style={{marginTop:'0.5rem'}}>{submitResult.message}</p>}
         </div>}
 
         <div className="panel" style={{marginTop:'1rem'}}>
