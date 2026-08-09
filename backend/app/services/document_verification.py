@@ -1,6 +1,6 @@
+import gc
 import os
 import re
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -28,13 +28,12 @@ def _client():
     return InferenceHTTPClient(api_url=ROBOFLOW_API_URL, api_key=api_key)
 
 
-@lru_cache(maxsize=3)
-def _local_model(model_path: str):
+def _load_local_model(model_path: Path):
     try:
         from ultralytics import YOLO
     except ImportError as exc:
         raise RuntimeError("ultralytics is not installed. Run: pip install -r requirements.txt") from exc
-    return YOLO(model_path)
+    return YOLO(str(model_path))
 
 
 def _model_device():
@@ -45,17 +44,48 @@ def _model_device():
 def _local_predictions(image: Image.Image, model_path: Path) -> list[dict]:
     if not model_path.exists():
         return []
-    model = _local_model(str(model_path))
-    result = model.predict(source=image, imgsz=int(os.getenv("KYC_MODEL_IMGSZ", "640")), conf=float(os.getenv("KYC_MODEL_CONF", "0.25")), device=_model_device(), verbose=False)[0]
-    predictions = []
-    names = getattr(result, "names", {}) or getattr(model, "names", {})
-    if result.boxes is None:
+
+    model = None
+    result = None
+    try:
+        model = _load_local_model(model_path)
+        result = model.predict(
+            source=image,
+            imgsz=int(os.getenv("KYC_MODEL_IMGSZ", "640")),
+            conf=float(os.getenv("KYC_MODEL_CONF", "0.25")),
+            device=_model_device(),
+            verbose=False,
+        )[0]
+
+        predictions = []
+        names = getattr(result, "names", {}) or getattr(model, "names", {})
+        if result.boxes is None:
+            return predictions
+
+        for box in result.boxes:
+            cls_id = int(box.cls[0].item())
+            x, y, width, height = [float(v) for v in box.xywh[0].tolist()]
+            predictions.append({
+                "class": str(names.get(cls_id, cls_id)),
+                "confidence": float(box.conf[0].item()),
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+            })
         return predictions
-    for box in result.boxes:
-        cls_id = int(box.cls[0].item())
-        x, y, width, height = [float(v) for v in box.xywh[0].tolist()]
-        predictions.append({"class": str(names.get(cls_id, cls_id)), "confidence": float(box.conf[0].item()), "x": x, "y": y, "width": width, "height": height})
-    return predictions
+    finally:
+        # Render instances can be memory constrained. Do not retain three
+        # separate PyTorch/YOLO models when a KYC submission contains 2-3 docs.
+        del result
+        del model
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            pass
 
 
 def _roboflow_predictions(image: Image.Image, model_id: str) -> list[dict]:
@@ -101,6 +131,7 @@ def _tesseract_ocr(image: Image.Image) -> str:
         import pytesseract
     except ImportError as exc:
         raise RuntimeError("pytesseract is not installed. Run: pip install -r requirements.txt") from exc
+
     image = ImageOps.grayscale(image)
     image = ImageOps.autocontrast(image)
     image = image.resize((max(image.width * 2, 800), max(image.height * 2, 200)))
@@ -229,9 +260,7 @@ def verify_secondary_document(image: Image.Image, document_type: str, expected_n
     name_match = _name_match(extracted_name, expected_name)
     if name_match is None and expected_name:
         name_match = _name_match(full_text, expected_name)
-    raw_number = fields.get("id_number", {}).get("text", "")
-    if not raw_number:
-        raw_number = full_text
+    raw_number = fields.get("id_number", {}).get("text", "") or full_text
     compact = _normalize_id(raw_number)
     match = re.search(r"\d{12}", compact) if document_type == "aadhaar" else re.search(r"[A-Z]{5}\d{4}[A-Z]", compact)
     extracted_number = match.group(0) if match else None
