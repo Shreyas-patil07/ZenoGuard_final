@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import './App.css';
 import WalletPayments from './WalletPayments';
+import Profile from './Profile';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const api = axios.create({ baseURL: API_URL, timeout: 15000 });
@@ -66,7 +67,7 @@ function Topbar() {
   return <header className="topbar">
     <Brand />
     <nav className="topnav">
-      {loggedIn ? <><Link to="/dashboard">Dashboard</Link><Link to="/claims">Claims</Link><Link to="/wallet">Wallet</Link></> : <><a href="#how-it-works">How it works</a><a href="#security">Security</a><a href="#coverage">Coverage</a></>}
+      {loggedIn ? <><Link to="/dashboard">Dashboard</Link><Link to="/claims">Claims</Link><Link to="/wallet">Wallet</Link><Link to="/profile">Profile</Link></> : <><a href="#how-it-works">How it works</a><a href="#security">Security</a><a href="#coverage">Coverage</a></>}
     </nav>
     {loggedIn ? <button className="ghost-btn" onClick={logout}><LogOut size={16}/> Logout</button> : <Link className="primary-btn" to="/login">Login <ArrowRight size={16}/></Link>}
   </header>;
@@ -147,7 +148,7 @@ function Shell({ title, children }) {
     ? active.blockchain_status === 'CONFIRMED' ? 'Protection active' : 'Blockchain pending'
     : pending ? 'Payment pending' : 'No active protection';
 
-  return <div className="app-shell"><aside className={`sidebar ${open?'open':''}`}><div className="side-brand"><Brand/><button className="mobile-close" onClick={()=>setOpen(false)}><X/></button></div><div className="side-user"><div className="avatar">{(user?.name||'G').slice(0,1).toUpperCase()}</div><div><b>{user?.name||'Guardian'}</b><span>Gig worker</span></div></div><nav className="side-nav"><Link to="/dashboard">Overview</Link><Link to="/claims">Claims</Link><Link to="/wallet">Wallet</Link></nav><button className="side-logout" onClick={logout}><LogOut size={17}/> Logout</button></aside><main className="app-main"><header className="mobile-top"><button className="menu-btn" onClick={()=>setOpen(true)}><Menu/></button><Brand/><span aria-hidden="true"/></header><div className="page-head"><div><div className="eyebrow">ZENOGUARD PROTECTION</div><h1>{title}</h1></div><div className="status-pill"><ShieldCheck size={16}/> {status}</div></div>{children}</main></div>;
+  return <div className="app-shell"><aside className={`sidebar ${open?'open':''}`}><div className="side-brand"><Brand/><button className="mobile-close" onClick={()=>setOpen(false)}><X/></button></div><div className="side-user"><div className="avatar">{(user?.name||'G').slice(0,1).toUpperCase()}</div><div><b>{user?.name||'Guardian'}</b><span>Gig worker</span></div></div><nav className="side-nav"><Link to="/dashboard">Overview</Link><Link to="/profile">Profile & identity</Link><Link to="/claims">Claims</Link><Link to="/wallet">Wallet</Link></nav><button className="side-logout" onClick={logout}><LogOut size={17}/> Logout</button></aside><main className="app-main"><header className="mobile-top"><button className="menu-btn" onClick={()=>setOpen(true)}><Menu/></button><Brand/><span aria-hidden="true"/></header><div className="page-head"><div><div className="eyebrow">ZENOGUARD PROTECTION</div><h1>{title}</h1></div><div className="status-pill"><ShieldCheck size={16}/> {status}</div></div>{children}</main></div>;
 }
 
 function Dashboard() {
@@ -313,6 +314,7 @@ function App() {
     <Route path="/login" element={<AuthPage mode="login"/>}/>
     <Route path="/signup" element={<AuthPage mode="signup"/>}/>
     <Route path="/dashboard" element={<Protected><Dashboard/></Protected>}/>
+    <Route path="/profile" element={<Protected><Profile Shell={Shell}/></Protected>}/>
     <Route path="/claims" element={<Protected><Claims/></Protected>}/>
     <Route path="/wallet" element={<Protected><WalletPayments Shell={Shell}/></Protected>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
