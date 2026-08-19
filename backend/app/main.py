@@ -2,11 +2,23 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import engine, Base
-from .routers import auth, kyc, wallet, company, earnings, premium, claims, contract, ml, upload, sessions, payments, webhooks
-from .health import router as health_router
 
-Base.metadata.create_all(bind=engine)
+from .health import router as health_router
+from .routers import (
+    auth,
+    claims,
+    company,
+    contract,
+    earnings,
+    kyc,
+    ml,
+    payments,
+    premium,
+    sessions,
+    upload,
+    wallet,
+    webhooks,
+)
 
 app = FastAPI(title="ZenoGuard API")
 
@@ -23,8 +35,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_allow_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(auth.router)
