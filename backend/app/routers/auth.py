@@ -64,7 +64,11 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token := credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            credentials.credentials,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+        )
         email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -106,7 +110,11 @@ def login(rider: RiderLogin, db: Session = Depends(get_db)):
     normalized_email = normalize_email(rider.email)
     db_rider = db.query(Rider).filter(Rider.email == normalized_email).first()
 
-    password_ok = verify_password(rider.password, db_rider.password_hash) if db_rider else False
+    password_ok = (
+        verify_password(rider.password, db_rider.password_hash)
+        if db_rider
+        else False
+    )
     if not db_rider or not password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
